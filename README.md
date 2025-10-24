@@ -6,10 +6,10 @@
 
 Modern apps need to run code they didn't write like AI-generated scripts, user automations, plugins, custom logic. But doing it safely is hard.
 
-Docle makes it simple. Run your users’ code safely with one line:
+Docle makes it simple. Run your users' code safely with one line:
 
 ```html
-<script src="https://api.docle.co/embed.js"></script>
+<script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
 <div data-docle>print("Hello, World!")</div>
 ```
 
@@ -97,7 +97,13 @@ import { DoclePlayground } from '@doclehq/vue';
 ### 5. CDN Embed
 
 ```html
-<script src="https://api.docle.co/embed.js"></script>
+<!-- From unpkg CDN (Recommended) -->
+<script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
+
+<!-- Or from your deployed Worker -->
+<script src="https://docle.onboardbase.workers.dev/embed.js"></script>
+
+<!-- Use anywhere -->
 <div data-docle data-lang="python">
 print("Hello, Docle!")
 </div>
@@ -148,6 +154,8 @@ npm run deploy
 ```
 
 Your API will be live at `https://docle.YOUR-SUBDOMAIN.workers.dev`
+
+**Current deployment:** https://docle.onboardbase.workers.dev
 
 ## Documentation
 

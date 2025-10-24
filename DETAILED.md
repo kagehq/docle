@@ -71,7 +71,7 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 ### Base URL
 
 ```
-Production: https://api.docle.co
+Production: https://docle.onboardbase.workers.dev
 Local: http://localhost:8787
 ```
 
@@ -133,7 +133,7 @@ Execute code in a secure sandbox.
 #### Example: Simple Python Execution
 
 ```bash
-curl -X POST https://api.docle.co/api/run \
+curl -X POST https://docle.onboardbase.workers.dev/api/run \
   -H "Content-Type: application/json" \
   -d '{
     "code": "print(\"Hello, Docle!\")\nfor i in range(3):\n    print(f\"Count: {i}\")",
@@ -149,7 +149,7 @@ curl -X POST https://api.docle.co/api/run \
 #### Example: Multi-File Python Project
 
 ```bash
-curl -X POST https://api.docle.co/api/run \
+curl -X POST https://docle.onboardbase.workers.dev/api/run \
   -H "Content-Type: application/json" \
   -d '{
     "files": [
@@ -171,7 +171,7 @@ curl -X POST https://api.docle.co/api/run \
 #### Example: Node.js with Packages
 
 ```bash
-curl -X POST https://api.docle.co/api/run \
+curl -X POST https://docle.onboardbase.workers.dev/api/run \
   -H "Content-Type: application/json" \
   -d '{
     "code": "const _ = require(\"lodash\");\nconsole.log(_.chunk([1,2,3,4,5,6], 2));",
@@ -198,7 +198,7 @@ Same format as POST /api/run response.
 #### Example
 
 ```bash
-curl https://api.docle.co/api/run/550e8400-e29b-41d4-a716-446655440000
+curl https://docle.onboardbase.workers.dev/api/run/550e8400-e29b-41d4-a716-446655440000
 ```
 
 ---
@@ -229,7 +229,7 @@ const result = await runSandbox('print("Hello, Docle!")', {
     memoryMB: 256,
     allowNet: false
   },
-  endpoint: 'https://api.docle.co' // optional, defaults to /api/run
+  endpoint: 'https://docle.onboardbase.workers.dev' // optional
 });
 
 console.log(result.stdout); // "Hello, Docle!"
@@ -420,8 +420,11 @@ Add interactive code playgrounds to any website with zero configuration.
 The simplest way to add code execution to any website.
 
 ```html
-<!-- Load once -->
-<script src="https://api.docle.co/embed.js"></script>
+<!-- Option 1: Load from unpkg CDN (Recommended) -->
+<script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
+
+<!-- Option 2: Load from your Worker -->
+<script src="https://docle.onboardbase.workers.dev/embed.js"></script>
 
 <!-- Use anywhere -->
 <div data-docle data-lang="python">
@@ -446,7 +449,7 @@ For more control, embed via iframe:
 
 ```html
 <iframe 
-  src="https://api.docle.co/embed?lang=python&code=print('Hello')"
+  src="https://docle.onboardbase.workers.dev/embed?lang=python&code=print('Hello')"
   width="100%" 
   height="400px"
   frameborder="0"
@@ -662,7 +665,7 @@ Every execution is automatically saved with:
 
 ```bash
 # Get execution by ID
-curl https://api.docle.co/api/run/{execution-id}
+curl https://docle.onboardbase.workers.dev/api/run/{execution-id}
 ```
 
 ```typescript
@@ -673,7 +676,7 @@ const result = await runSandbox('print("Hello")', { lang: 'python' });
 console.log(result.id); // "550e8400-e29b-41d4-a716-446655440000"
 
 // Later, retrieve the same execution
-const historicalResult = await fetch(`https://api.docle.co/api/run/${result.id}`)
+const historicalResult = await fetch(`https://docle.onboardbase.workers.dev/api/run/${result.id}`)
   .then(r => r.json());
 ```
 
@@ -1154,10 +1157,10 @@ Real-time multi-user code editing powered by Durable Objects and WebSockets.
 
 ```bash
 # Visit the collab playground
-https://app.docle.co/collab
+https://docle.onboardbase.workers.dev/collab
 
 # You'll be redirected to a unique session URL
-https://app.docle.co/collab/abc-123-def
+https://docle.onboardbase.workers.dev/collab/abc-123-def
 
 # Share this URL with collaborators
 ```
@@ -1178,7 +1181,7 @@ https://app.docle.co/collab/abc-123-def
 
 ```javascript
 const sessionId = 'abc-123-def';
-const ws = new WebSocket(`wss://api.docle.co/collab/${sessionId}/websocket`);
+const ws = new WebSocket(`wss://docle.onboardbase.workers.dev/collab/${sessionId}/websocket`);
 
 ws.onopen = () => {
   console.log('Connected to session');
@@ -1263,7 +1266,7 @@ ws.onmessage = (event) => {
 Get current session state via HTTP:
 
 ```bash
-curl https://api.docle.co/collab/abc-123-def/state
+curl https://docle.onboardbase.workers.dev/collab/abc-123-def/state
 ```
 
 Response:
