@@ -1,6 +1,6 @@
 # @docle/react
 
-React components for [Docle](https://github.com/yourusername/docle) - embeddable code execution powered by Cloudflare.
+React components for [Docle](https://github.com/kagehq/docle) - embeddable code execution powered by Cloudflare.
 
 ## Installation
 
@@ -241,5 +241,5 @@ MIT
 - [Docle Documentation](../../README.md)
 - [API Reference](../../README.md#api-reference)
 - [Examples](../../examples/)
-- [GitHub](https://github.com/yourusername/docle)
+- [GitHub](https://github.com/kagehq/docle)
 

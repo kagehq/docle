@@ -538,7 +538,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
   </div>
   ${showOutput ? '<div id="output" class="output" style="display:none"><pre id="output-text"></pre></div>' : ''}
 </div>
-<div class="powered">Powered by <a href="https://github.com/yourusername/docle" target="_blank">Docle</a></div>
+<div class="powered">Powered by <a href="https://github.com/kagehq/docle" target="_blank">Docle</a></div>
 
 <script type="module">
 const qs = (s) => document.querySelector(s);

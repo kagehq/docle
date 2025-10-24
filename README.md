@@ -32,7 +32,7 @@ Docle makes it instant. Add code execution to your app in 5 minutes. No servers,
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/docle.git
+git clone https://github.com/kagehq/docle.git
 cd docle
 npm install
 npm run dev
