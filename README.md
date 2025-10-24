@@ -1,6 +1,6 @@
 # Docle
 
-**Run untrusted code safely, anywhere.** Secure code execution service built on Cloudflare Workers + Sandbox.
+Run untrusted code safely, anywhere. Secure code execution service built on Cloudflare Workers + Sandbox.
 Execute Python or Node.js code in isolated sandboxes with configurable policies for timeout, memory, and network access.
 
 ## Why Docle?
@@ -8,7 +8,7 @@ Execute Python or Node.js code in isolated sandboxes with configurable policies 
 Every modern app runs code it didn’t write. AI-generated snippets, user automations, plugin systems, custom logic blocks.
 But running that code safely? It’s a nightmare.
 
-Docle makes it instant. Add code execution to your app in 5 minutes. No servers, no containers, no complexity. Run untrusted code securely in one line.
+Docle makes it instant. Add code execution to your app in 5 minutes. No servers, no docker, no complexity, no risk. Run your users’ code safely with one line.
 
 ```html
 <!-- Literally one line -->
@@ -16,7 +16,7 @@ Docle makes it instant. Add code execution to your app in 5 minutes. No servers,
 <div data-docle>print("Hello, World!")</div>
 ```
 
-✨ **That's it.** Your users can now run Python and Node.js code safely in your app.
+**That's it.** Your users can now run Python and Node.js code safely in your app.
 
 **What makes it special:**
 - **Edge-native** - Runs on Cloudflare's global network (<50ms latency)
