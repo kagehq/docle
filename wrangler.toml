@@ -22,6 +22,11 @@ deleted_classes = ["Sandbox"]
 tag = "v4"
 new_sqlite_classes = ["Sandbox"]
 
+# Create CollabSession Durable Object for real-time collaboration
+[[migrations]]
+tag = "v5"
+new_classes = ["CollabSession"]
+
 # Cloudflare Sandbox Container
 [[containers]]
 class_name = "Sandbox"
@@ -33,4 +38,9 @@ max_instances = 10
 [[durable_objects.bindings]]
 name = "SANDBOX"
 class_name = "Sandbox"
+
+# Durable Object binding for Collaborative Sessions
+[[durable_objects.bindings]]
+name = "COLLAB_SESSION"
+class_name = "CollabSession"
 

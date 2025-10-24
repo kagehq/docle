@@ -85,18 +85,20 @@ app.get("/api/run/:id", async (c) => {
 });
 
 // Collaborative editing endpoints
-// Note: Disabled in local dev due to Wrangler issues
-// Uncomment when deploying to production
-// app.all("/collab/:sessionId/*", (c) => {
-//   const sessionId = c.req.param("sessionId");
-//   const id = c.env.COLLAB_SESSION?.idFromName(sessionId);
-//   if (!id) {
-//     return c.text("Collaborative editing not available (Durable Objects not configured)", 503);
-//   }
-//   const stub = c.env.COLLAB_SESSION.get(id);
-//   return stub.fetch(c.req.raw);
-// });
+app.all("/collab/:sessionId/*", async (c) => {
+  const sessionId = c.req.param("sessionId");
+  
+  if (!c.env.COLLAB_SESSION) {
+    return c.json({ error: "Collaborative editing not available" }, 503);
+  }
+  
+  const id = c.env.COLLAB_SESSION.idFromName(sessionId);
+  const stub = c.env.COLLAB_SESSION.get(id);
+  
+  // Forward the request to the Durable Object
+  return stub.fetch(c.req.raw);
+});
 
 export default app;
-// export { CollabSession }; // Uncomment for production
+export { CollabSession };
 

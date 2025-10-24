@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const route = useRoute()
 
@@ -42,8 +42,11 @@ const lastRunResult = ref<any>(null)
 
 // Collab state
 const myUserId = ref<string>('')
-const users = ref<{id: string, name: string}[]>([])
+const users = ref<{id: string, name: string, color?: string}[]>([])
 const isConnected = ref(false)
+const ws = ref<WebSocket | null>(null)
+const reconnectAttempts = ref(0)
+const maxReconnectAttempts = 5
 
 // Toast notification
 const toast = ref({ show: false, message: '', type: 'success' as 'success' | 'error' })
@@ -58,6 +61,127 @@ const getUserId = () => {
   return userId
 }
 
+// WebSocket connection for collaboration
+const connectWebSocket = () => {
+  if (!sessionId.value) return
+  
+  const config = useRuntimeConfig()
+  const isLocal = process.client && window.location.hostname === 'localhost'
+  const wsProtocol = isLocal ? 'ws' : 'wss'
+  const wsHost = isLocal ? 'localhost:8787' : config.public.apiBase.replace(/^https?:\/\//, '')
+  const wsUrl = `${wsProtocol}://${wsHost}/collab/${sessionId.value}/websocket`
+  
+  try {
+    ws.value = new WebSocket(wsUrl)
+    
+    ws.value.onopen = () => {
+      isConnected.value = true
+      reconnectAttempts.value = 0
+      console.log('✅ Connected to collaboration session')
+    }
+    
+    ws.value.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data)
+        handleWebSocketMessage(msg)
+      } catch (e) {
+        console.error('Failed to parse message:', e)
+      }
+    }
+    
+    ws.value.onclose = () => {
+      isConnected.value = false
+      console.log('❌ Disconnected from collaboration session')
+      
+      // Try to reconnect
+      if (reconnectAttempts.value < maxReconnectAttempts) {
+        reconnectAttempts.value++
+        setTimeout(() => {
+          console.log(`🔄 Reconnecting (attempt ${reconnectAttempts.value})...`)
+          connectWebSocket()
+        }, 1000 * reconnectAttempts.value)
+      }
+    }
+    
+    ws.value.onerror = (error) => {
+      console.error('WebSocket error:', error)
+      showToast('Connection error. Retrying...', 'error')
+    }
+  } catch (e) {
+    console.error('Failed to create WebSocket:', e)
+    showToast('Failed to connect to collaboration session', 'error')
+  }
+}
+
+// Handle incoming WebSocket messages
+const handleWebSocketMessage = (msg: any) => {
+  switch (msg.type) {
+    case 'init':
+      // Initial state from server
+      myUserId.value = msg.userId
+      code.value = msg.data.code || code.value
+      lang.value = msg.data.lang || lang.value
+      users.value = msg.data.users.map((u: any) => 
+        u.id === msg.userId ? { ...u, name: 'You' } : u
+      )
+      break
+      
+    case 'join':
+      // New user joined
+      const existingUser = users.value.find(u => u.id === msg.userId)
+      if (!existingUser) {
+        users.value.push({
+          id: msg.userId,
+          name: msg.data.name,
+          color: msg.data.color
+        })
+        showToast(`${msg.data.name} joined`, 'success')
+      }
+      break
+      
+    case 'leave':
+      // User left
+      const leftUser = users.value.find(u => u.id === msg.userId)
+      if (leftUser) {
+        users.value = users.value.filter(u => u.id !== msg.userId)
+        showToast(`${leftUser.name} left`, 'success')
+      }
+      break
+      
+    case 'update':
+      // Code updated by another user
+      if (msg.userId !== myUserId.value) {
+        code.value = msg.data.code || code.value
+        lang.value = msg.data.lang || lang.value
+        
+        const user = users.value.find(u => u.id === msg.userId)
+        if (user && user.name !== 'You') {
+          showToast(`Code updated by ${user.name}`, 'success')
+        }
+      }
+      break
+      
+    case 'cursor':
+      // Cursor position update (for future implementation)
+      // You could highlight where other users are typing
+      break
+  }
+}
+
+// Send code update via WebSocket
+const sendCodeUpdate = () => {
+  if (ws.value && ws.value.readyState === WebSocket.OPEN && isCollabMode.value) {
+    ws.value.send(JSON.stringify({
+      type: 'update',
+      userId: myUserId.value,
+      data: {
+        code: code.value,
+        lang: lang.value
+      }
+    }))
+  }
+}
+
 // Load history
 onMounted(() => {
   const stored = localStorage.getItem('docle_history')
@@ -67,42 +191,15 @@ onMounted(() => {
   myUserId.value = getUserId()
   
   if (isCollabMode.value) {
-    // Simulate connection
-    setTimeout(() => { 
-      isConnected.value = true 
-      
-      // Get existing users or initialize
-      const sessionUsers = localStorage.getItem(`collab_${sessionId.value}_users`)
-      let parsedUsers: {id: string, name: string}[] = []
-      
-      if (sessionUsers) {
-        parsedUsers = JSON.parse(sessionUsers)
-        // Add yourself if not already in the list
-        if (!parsedUsers.find(u => u.id === myUserId.value)) {
-          parsedUsers.push({ id: myUserId.value, name: myUserId.value })
-          localStorage.setItem(`collab_${sessionId.value}_users`, JSON.stringify(parsedUsers))
-        }
-      } else {
-        // You're the first user
-        parsedUsers = [{ id: myUserId.value, name: myUserId.value }]
-        localStorage.setItem(`collab_${sessionId.value}_users`, JSON.stringify(parsedUsers))
-      }
-      
-      // Display users (show "You" for yourself)
-      users.value = parsedUsers.map((u: any) => 
-        u.id === myUserId.value ? { id: u.id, name: 'You' } : u
-      )
-    }, 1000)
-    
-    // Listen for storage changes (other tabs/users joining)
-    window.addEventListener('storage', (e) => {
-      if (e.key === `collab_${sessionId.value}_users` && e.newValue) {
-        const parsedUsers = JSON.parse(e.newValue)
-        users.value = parsedUsers.map((u: any) => 
-          u.id === myUserId.value ? { id: u.id, name: 'You' } : u
-        )
-      }
-    })
+    // Connect via WebSocket for real collaboration
+    connectWebSocket()
+  }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (ws.value) {
+    ws.value.close()
   }
 })
 
@@ -257,14 +354,21 @@ const toggleMultiFile = () => {
   showToast(isMultiFile.value ? 'Multi-file mode enabled' : 'Single-file mode enabled', 'success')
 }
 
+// Watch for code changes and sync via WebSocket
+let sendUpdateTimeout: NodeJS.Timeout | null = null
+watch([code, lang], () => {
+  if (isCollabMode.value) {
+    // Debounce updates to avoid flooding the server
+    if (sendUpdateTimeout) clearTimeout(sendUpdateTimeout)
+    sendUpdateTimeout = setTimeout(() => {
+      sendCodeUpdate()
+    }, 500) // Send update 500ms after user stops typing
+  }
+})
+
 // Collab operations
 const startCollabSession = () => {
   const newSessionId = crypto.randomUUID()
-  
-  // Initialize session with current user
-  const currentUser = { id: myUserId.value, name: myUserId.value }
-  localStorage.setItem(`collab_${newSessionId}_users`, JSON.stringify([currentUser]))
-  
   navigateTo(`/?session=${newSessionId}`)
   showToast('Collaborative session started', 'success')
 }
