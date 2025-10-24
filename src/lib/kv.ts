@@ -3,7 +3,7 @@ import type { CollabSession } from './collab';
 
 export type Env = { 
   RUNS: KVNamespace; 
-  SANDBOX: DurableObjectNamespace<Sandbox>; // Cloudflare Sandbox binding (Durable Object)
+  SANDBOX?: DurableObjectNamespace<Sandbox>; // Cloudflare Sandbox binding (Production only)
   COLLAB_SESSION: DurableObjectNamespace<CollabSession>; // Collaborative editing sessions
   APP_NAME: string;
 };

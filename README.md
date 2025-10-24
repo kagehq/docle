@@ -30,14 +30,26 @@ Docle makes it instant. Add code execution to your app in 5 minutes. No servers,
 
 ## Quick Start
 
+### For Users (Live Demo)
+Visit **https://app.docle.co** - Full playground with real code execution
+
+### For Developers (Local Setup)
 ```bash
 git clone https://github.com/kagehq/docle.git
 cd docle
+
+# Install dependencies
 npm install
-npm run dev
+cd playground && npm install && cd ..
+
+# Start servers (API + Playground)
+./start.sh
 ```
 
-Visit http://localhost:8787/playground
+Visit **http://localhost:3001** for playground
+API runs on **http://localhost:8787**
+
+**Note:** Cloudflare Sandbox containers only work in production. Local dev uses simulation mode.
 
 ## Usage
 

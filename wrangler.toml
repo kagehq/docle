@@ -12,24 +12,24 @@ preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 [vars]
 APP_NAME = "Docle"
 
-# Enable Cloudflare Sandbox
-[[migrations]]
-tag = "v7"
-new_sqlite_classes = ["Sandbox"]
+# Enable Cloudflare Sandbox (Production Only - Containers don't work in local dev)
+# [[migrations]]
+# tag = "v7"
+# new_sqlite_classes = ["Sandbox"]
 
-# Cloudflare Sandbox with Containers
-[[containers]]
-class_name = "Sandbox"
-image = "./Dockerfile"
-name = "docle-sandbox"
-max_instances = 10
+# Cloudflare Sandbox with Containers (Comment out for local dev, uncomment for production deploy)
+# [[containers]]
+# class_name = "Sandbox"
+# image = "./Dockerfile"
+# name = "docle-sandbox"
+# max_instances = 10
 
-[[durable_objects.bindings]]
-name = "SANDBOX"
-class_name = "Sandbox"
+# [[durable_objects.bindings]]
+# name = "SANDBOX"
+# class_name = "Sandbox"
 
-[observability]
-enabled = true
+# [observability]
+# enabled = true
 
 # Durable Object binding for Collaborative Sessions
 [[durable_objects.bindings]]
