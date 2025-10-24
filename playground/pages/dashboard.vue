@@ -237,25 +237,25 @@ const formatRelativeTime = (timestamp: number) => {
       
       <!-- Loading -->
       <div v-if="loading" class="p-12 rounded-lg bg-gray-500/10 border border-gray-500/10 text-center">
-        <svg class="w-8 h-8 mx-auto mb-4 animate-spin text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 mx-auto mb-4 animate-spin text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
         </svg>
         <p class="text-gray-400">Loading history...</p>
       </div>
 
       <!-- Error -->
-      <div v-else-if="error" class="p-8 rounded-lg bg-red-500/10 border border-red-500/10 text-center">
-        <svg class="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div v-else-if="error" class="p-8 rounded-lg bg-gray-500/10 border border-gray-500/10 text-center">
+        <svg class="w-12 h-12 mx-auto mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
-        <p class="text-red-400 text-lg font-semibold mb-2">Error loading history</p>
-        <p class="text-red-400/60">{{ error }}</p>
+        <p class="text-red-500 text-lg font-semibold mb-2">Error loading history</p>
+        <p class="text-red-500/60">{{ error }}</p>
       </div>
 
       <!-- Empty State -->
       <div v-else-if="filteredRuns.length === 0 && runs.length === 0" class="p-12 rounded-lg bg-gray-500/10 border border-gray-500/10 text-center">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-accent/10 flex items-center justify-center">
-          <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-500/5 flex items-center justify-center">
+          <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
           </svg>
         </div>
@@ -263,11 +263,11 @@ const formatRelativeTime = (timestamp: number) => {
         <p class="text-gray-500 mb-6">Run some code in the playground to see it here!</p>
           <NuxtLink 
             to="/"
-            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-300 text-black font-semibold transition-all">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="inline-flex items-center gap-2 text-sm px-6 py-3 rounded-lg bg-blue-300 text-black font-semibold transition-all">
+          Go to Playground
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
           </svg>
-          Go to Playground
         </NuxtLink>
       </div>
 

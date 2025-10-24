@@ -107,8 +107,8 @@ onMounted(() => {
     <!-- Minimal Header -->
     <div class="border-b border-gray-500/20 px-3 py-2 flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded bg-green-300 flex items-center justify-center text-black font-bold text-xs">
-          D
+        <div class="relative flex items-center">
+          <img src="/assets/img/logo.png" alt="Docle" class="w-5 h-5">
         </div>
         <span class="text-xs text-gray-500">Embedded Playground</span>
       </div>
@@ -130,7 +130,7 @@ onMounted(() => {
         <button 
           @click="runCode"
           :disabled="isRunning || readonly"
-          class="px-3 py-1.5 text-xs rounded-lg bg-green-300 text-black font-medium hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          class="px-3 py-1.5 text-xs rounded-lg bg-blue-300 text-black font-medium hover:bg-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           {{ isRunning ? 'Running...' : 'Run' }}
         </button>
       </div>
