@@ -3,7 +3,7 @@
  * Automatically embeds code playgrounds via data attributes or programmatic API
  * 
  * Usage:
- * <script src="https://docle.workers.dev/embed.js"></script>
+ * <script src="https://api.docle.co/embed.js"></script>
  * <div data-docle data-lang="python">print("Hello")</div>
  */
 
