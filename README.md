@@ -5,8 +5,7 @@ Execute Python or Node.js code in isolated sandboxes with configurable policies 
 
 ## Why Docle?
 
-Every modern app runs code it didn’t write. AI-generated snippets, user automations, plugin systems, custom logic blocks.
-But running that code safely? It’s a nightmare.
+Every modern app runs code it didn’t write. AI-generated snippets, user automations, plugin systems, custom logic blocks. But running that code safely? It’s a nightmare.
 
 Docle makes it instant. Add code execution to your app in 5 minutes. No servers, no docker, no complexity, no risk. Run your users’ code safely with one line.
 

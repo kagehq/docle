@@ -84,8 +84,8 @@ export async function runInSandbox(
     // Determine command based on language
     const filepath = `/workspace/${entrypoint}`;
     const command = lang === "python" 
-      ? ["python3", filepath]
-      : ["node", filepath];
+      ? `python3 ${filepath}`
+      : `node ${filepath}`;
     
     // Execute with timeout
     const result = await sandbox.exec(command, {
@@ -144,7 +144,7 @@ async function installPackages(
       
       // Run pip install
       const result = await sandbox.exec(
-        ["pip3", "install", "-r", "/workspace/requirements.txt", "--quiet"],
+        "pip3 install -r /workspace/requirements.txt --quiet",
         { timeout: Math.min(timeoutMs, 60000) } // Max 60s for installation
       );
       
@@ -172,7 +172,7 @@ async function installPackages(
       
       // Run npm install
       const result = await sandbox.exec(
-        ["npm", "install", "--silent"],
+        "npm install --silent",
         { timeout: Math.min(timeoutMs, 60000) }
       );
       

@@ -28,6 +28,9 @@ max_instances = 10
 name = "SANDBOX"
 class_name = "Sandbox"
 
+[observability]
+enabled = true
+
 # Durable Object binding for Collaborative Sessions
 [[durable_objects.bindings]]
 name = "COLLAB_SESSION"
