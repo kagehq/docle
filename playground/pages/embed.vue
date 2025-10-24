@@ -23,11 +23,27 @@ if (!code.value) {
 }
 
 // Run code
-const runCode = async () => {
+// Helper: Get friendly error message
+const getFriendlyError = (message: string): string => {
+  if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
+    return '⏱️ Execution timed out. Try increasing the timeout or optimizing your code.'
+  }
+  if (message.includes('fetch failed') || message.includes('NetworkError')) {
+    return '🌐 Connection failed. The API may be temporarily unavailable.'
+  }
+  if (message.includes('HTTP 50')) {
+    return '⚠️ Server error. The execution environment may be starting up (takes 5-10 seconds).'
+  }
+  return `❌ ${message}`
+}
+
+const runCode = async (retryCount = 0) => {
   if (isRunning.value) return
   
   isRunning.value = true
-  output.value = 'Running...'
+  output.value = retryCount > 0 
+    ? `Retrying... (attempt ${retryCount + 1}/3)` 
+    : 'Executing code...'
   
   try {
     console.log('Running code:', { lang: lang.value, code: code.value })
@@ -43,7 +59,7 @@ const runCode = async () => {
       body: JSON.stringify({
         lang: lang.value,
         code: code.value,
-        timeout: 10000
+        policy: { timeoutMs: 10000 }
       })
     })
     
@@ -74,10 +90,28 @@ const runCode = async () => {
     
   } catch (error: any) {
     console.error('Error running code:', error)
-    output.value = `Error: ${error.message}`
+    
+    const friendlyError = getFriendlyError(error.message || String(error))
+    
+    // Auto-retry on timeout/server errors
+    const shouldRetry = (
+      (error.message?.includes('timeout') || 
+       error.message?.includes('HTTP 50') ||
+       error.message?.includes('fetch failed')) &&
+      retryCount < 2
+    )
+    
+    if (shouldRetry) {
+      console.log(`Retrying... (${retryCount + 1}/2)`)
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      return runCode(retryCount + 1)
+    }
+    
+    output.value = friendlyError
     window.parent.postMessage({
       type: 'docle-error',
-      data: { error: error.message }
+      data: { error: friendlyError }
     }, '*')
   } finally {
     isRunning.value = false

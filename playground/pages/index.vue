@@ -37,6 +37,9 @@ const newPackage = ref('')
 // Output & History
 const output = ref('')
 const isRunning = ref(false)
+const loadingMessage = ref('')
+const retryCount = ref(0)
+const maxRetries = 2
 const history = ref<any[]>([])
 const lastRunResult = ref<any>(null)
 
@@ -292,9 +295,49 @@ const removePackage = (idx: number) => {
   showToast(`Package "${pkg}" removed`, 'success')
 }
 
-// Run code
-const runCode = async () => {
+// Helper: Get friendly error message
+const getFriendlyError = (error: any): string => {
+  const message = error.message || error.data?.message || String(error)
+  
+  // Timeout errors
+  if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
+    return `⏱️ Execution timed out\n\nYour code took longer than ${timeout.value}ms to execute.\nTry:\n• Increasing the timeout limit\n• Optimizing your code\n• Reducing data processing`
+  }
+  
+  // Network errors
+  if (message.includes('fetch failed') || message.includes('ECONNREFUSED')) {
+    return `🌐 Connection failed\n\nCouldn't reach the execution server.\nThis usually means:\n• The API is temporarily down\n• Network connectivity issue\n• Check your internet connection`
+  }
+  
+  // Cold start (takes 5-10s)
+  if (message.includes('Headers Timeout')) {
+    return `⏳ Server is waking up...\n\nThe execution environment is initializing (takes 5-10 seconds on first run).\nRetrying automatically...`
+  }
+  
+  // Memory errors
+  if (message.includes('memory') || message.includes('OOM')) {
+    return `💾 Out of memory\n\nYour code used more than ${memory.value}MB of memory.\nTry:\n• Increasing memory limit\n• Processing data in smaller chunks\n• Reducing variable sizes`
+  }
+  
+  // Syntax errors
+  if (message.includes('SyntaxError')) {
+    return `❌ Syntax Error\n\n${message}\n\nCheck your code for:\n• Missing parentheses or brackets\n• Incorrect indentation (Python)\n• Missing semicolons (JavaScript)`
+  }
+  
+  // Default error
+  return `❌ Execution Error\n\n${message}`
+}
+
+// Run code with retry logic
+const runCode = async (isRetry = false) => {
+  if (!isRetry) {
+    retryCount.value = 0
+  }
+  
   isRunning.value = true
+  loadingMessage.value = retryCount.value > 0 
+    ? `Retrying... (attempt ${retryCount.value + 1}/${maxRetries + 1})` 
+    : 'Executing code...'
   output.value = ''
   lastRunResult.value = null
   
@@ -325,13 +368,20 @@ const runCode = async () => {
       ? '/api/run'  // Use local proxy in development
       : `${config.public.apiBase}/api/run`  // Use production API
     
+    // Show cold start message for first-time users
+    if (retryCount.value === 0 && !history.value.length) {
+      loadingMessage.value = 'Starting execution environment... (first run takes ~10 seconds)'
+    }
+    
     const response = await $fetch(apiUrl, {
       method: 'POST',
-      body: payload
+      body: payload,
+      timeout: timeout.value + 10000  // Add buffer to API timeout
     })
     
     lastRunResult.value = response
     output.value = response.stdout || response.stderr || JSON.stringify(response, null, 2)
+    retryCount.value = 0  // Reset retry count on success
     
     // Broadcast execution result to collaborators in real-time
     if (isCollabMode.value) {
@@ -347,16 +397,44 @@ const runCode = async () => {
     localStorage.setItem('docle_history', JSON.stringify(newHistory))
     
     if (response.ok) {
-      showToast('Code executed successfully', 'success')
+      showToast('✅ Code executed successfully', 'success')
     } else {
-      showToast('Execution completed with errors', 'error')
+      showToast('⚠️ Execution completed with errors', 'error')
     }
     
   } catch (error: any) {
-    output.value = `Error: ${error.message || 'Failed to execute code'}`
-    showToast(error.message || 'Failed to execute code', 'error')
+    console.error('Execution error:', error)
+    
+    const friendlyError = getFriendlyError(error)
+    output.value = friendlyError
+    
+    // Auto-retry on timeout/connection errors
+    const shouldRetry = (
+      (error.message?.includes('timeout') || 
+       error.message?.includes('Headers Timeout') ||
+       error.message?.includes('fetch failed')) &&
+      retryCount.value < maxRetries
+    )
+    
+    if (shouldRetry) {
+      retryCount.value++
+      showToast(`⏳ Retrying... (${retryCount.value}/${maxRetries})`, 'error')
+      // Wait 2 seconds before retry
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      return runCode(true)
+    }
+    
+    // Show error toast
+    const shortError = error.message?.includes('timeout') 
+      ? 'Execution timed out'
+      : error.message?.includes('fetch failed')
+      ? 'Connection failed'
+      : 'Execution failed'
+    
+    showToast(`❌ ${shortError}`, 'error')
   } finally {
     isRunning.value = false
+    loadingMessage.value = ''
   }
 }
 
@@ -678,7 +756,16 @@ const getStatusColor = () => {
                   </svg>
                 </div>
               </div>
-              <div class="flex items-end">
+              <div class="flex flex-col gap-2">
+                <!-- Loading message -->
+                <div v-if="loadingMessage" class="text-xs text-blue-300 animate-pulse flex items-center gap-2">
+                  <svg class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ loadingMessage }}
+                </div>
+                
                 <button 
                   @click="runCode"
                   :disabled="isRunning"
@@ -686,7 +773,7 @@ const getStatusColor = () => {
                     'w-full px-3 py-2  text-sm rounded-lg font-semibold transition-all flex items-center justify-center gap-2',
                     isRunning
                       ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-300 text-black'
+                      : 'bg-blue-300 text-black hover:bg-blue-400'
                   ]">
                   <svg v-if="!isRunning" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z"/>
