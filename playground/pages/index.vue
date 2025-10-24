@@ -161,6 +161,19 @@ const handleWebSocketMessage = (msg: any) => {
       }
       break
       
+    case 'run':
+      // Code executed by another user - update output in real-time
+      if (msg.userId !== myUserId.value) {
+        lastRunResult.value = msg.data.result
+        output.value = msg.data.result.stdout || msg.data.result.stderr || JSON.stringify(msg.data.result, null, 2)
+        
+        const user = users.value.find(u => u.id === msg.userId)
+        if (user && user.name !== 'You') {
+          showToast(`${user.name} ran the code`, 'success')
+        }
+      }
+      break
+      
     case 'cursor':
       // Cursor position update (for future implementation)
       // You could highlight where other users are typing
@@ -177,6 +190,19 @@ const sendCodeUpdate = () => {
       data: {
         code: code.value,
         lang: lang.value
+      }
+    }))
+  }
+}
+
+// Send run result via WebSocket
+const sendRunResult = (result: any) => {
+  if (ws.value && ws.value.readyState === WebSocket.OPEN && isCollabMode.value) {
+    ws.value.send(JSON.stringify({
+      type: 'run',
+      userId: myUserId.value,
+      data: {
+        result
       }
     }))
   }
@@ -284,6 +310,11 @@ const runCode = async () => {
     lastRunResult.value = response
     output.value = response.stdout || response.stderr || JSON.stringify(response, null, 2)
     
+    // Broadcast execution result to collaborators in real-time
+    if (isCollabMode.value) {
+      sendRunResult(response)
+    }
+    
     // Save to history
     const newHistory = [
       { code: code.value, lang: lang.value, timestamp: Date.now(), result: response },
@@ -376,6 +407,18 @@ const startCollabSession = () => {
 const copyShareLink = () => {
   navigator.clipboard.writeText(window.location.href)
   showToast('Share link copied to clipboard!', 'success')
+}
+
+const leaveCollaboration = () => {
+  if (ws.value) {
+    ws.value.close()
+    ws.value = null
+  }
+  isConnected.value = false
+  users.value = []
+  reconnectAttempts.value = maxReconnectAttempts // Prevent reconnection attempts
+  navigateTo('/')
+  showToast('Left collaboration session', 'success')
 }
 
 // Get status color
@@ -491,12 +534,23 @@ const getStatusColor = () => {
             <button 
               v-if="isCollabMode"
               @click="copyShareLink"
-              class="px-2.5 py-1.5 text-xs rounded-lg border border-blue-300 bg-blue-300 text-black font-medium transition-all">
+              class="px-2.5 py-1.5 text-xs rounded-lg border border-blue-300 bg-blue-300 text-black font-medium transition-all hover:bg-blue-400">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
                 </svg>
                 Share
+              </span>
+            </button>
+            <button 
+              v-if="isCollabMode"
+              @click="leaveCollaboration"
+              class="px-2.5 py-1.5 text-xs rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 font-medium transition-all hover:bg-red-500/20">
+              <span class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Leave
               </span>
             </button>
             <div class="flex items-end">

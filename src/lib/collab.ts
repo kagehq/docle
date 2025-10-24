@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 export interface CollabMessage {
-  type: 'join' | 'leave' | 'update' | 'cursor' | 'sync';
+  type: 'join' | 'leave' | 'update' | 'cursor' | 'sync' | 'run';
   userId: string;
   data?: any;
   timestamp?: number;
@@ -165,6 +165,16 @@ export class CollabSession extends DurableObject {
           userId,
           data: msg.data,
           timestamp: this.state.lastUpdate
+        }, ws);
+        break;
+
+      case 'run':
+        // Broadcast execution result to all users
+        this.broadcast({
+          type: 'run',
+          userId,
+          data: msg.data,
+          timestamp: Date.now()
         }, ws);
         break;
 
