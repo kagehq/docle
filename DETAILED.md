@@ -57,12 +57,12 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 
 ### Integration Options
 
-- 🔌 **REST API** - Simple HTTP endpoints
-- 📚 **TypeScript SDK** - Type-safe client library
-- ⚛️ **React Components** - Pre-built UI components
-- 💚 **Vue 3 Components** - Native Vue integration
-- 🌐 **CDN Embed** - One-line website integration
-- 🖼️ **iframe Embed** - Sandboxed iframe embedding
+- **REST API** - Simple HTTP endpoints
+- **TypeScript SDK** - Type-safe client library
+- **React Components** - Pre-built UI components
+- **Vue 3 Components** - Native Vue integration
+- **CDN Embed** - One-line website integration
+- **iframe Embed** - Sandboxed iframe embedding
 
 ---
 

@@ -38,7 +38,7 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
     try {
       const endpoint = runOptions.endpoint || options.endpoint || 
         (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 
-        'https://docle.workers.dev';
+        'https://api.docle.co';
 
       const response = await fetch(`${endpoint}/api/run`, {
         method: 'POST',

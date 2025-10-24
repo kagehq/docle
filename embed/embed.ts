@@ -55,7 +55,7 @@ class DocleEmbed {
     });
     
     // Use current origin in development, production URL in prod
-    const baseUrl = (window as any).DOCLE_ENDPOINT || 'https://docle.workers.dev';
+    const baseUrl = (window as any).DOCLE_ENDPOINT || 'https://api.docle.co';
     iframe.src = `${baseUrl}/embed?${params}`;
     iframe.style.width = '100%';
     iframe.style.height = this.options.height!;

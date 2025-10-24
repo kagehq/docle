@@ -111,7 +111,7 @@
         autorun: 'false'
       });
       // For local testing: http://localhost:8787
-      // For production: https://docle.workers.dev
+      // For production: https://api.docle.co
       const baseUrl = 'http://localhost:8787';
       const src = `${baseUrl}/embed?${params}`;
 
@@ -137,7 +137,7 @@
         setLoading(true);
         setError(null);
         try {
-          // For production, use: https://docle.workers.dev/api/run
+          // For production, use: https://api.docle.co/api/run
           const response = await fetch('http://localhost:8787/api/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

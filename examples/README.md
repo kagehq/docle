@@ -22,7 +22,7 @@ open examples/embed-demo.html
 
 ```html
 <iframe 
-  src="https://docle.workers.dev/embed?lang=python&code=print('Hello')"
+  src="https://api.docle.co/embed?lang=python&code=print('Hello')"
   width="100%" 
   height="400"
 ></iframe>
@@ -43,22 +43,22 @@ open examples/embed-demo.html
 
 **Python with custom code:**
 ```html
-<iframe src="https://docle.workers.dev/embed?lang=python&code=for%20i%20in%20range(5)%3A%0A%20%20%20%20print(i)"></iframe>
+<iframe src="https://api.docle.co/embed?lang=python&code=for%20i%20in%20range(5)%3A%0A%20%20%20%20print(i)"></iframe>
 ```
 
 **JavaScript/Node:**
 ```html
-<iframe src="https://docle.workers.dev/embed?lang=node&code=console.log('Hi!')"></iframe>
+<iframe src="https://api.docle.co/embed?lang=node&code=console.log('Hi!')"></iframe>
 ```
 
 **Light theme:**
 ```html
-<iframe src="https://docle.workers.dev/embed?theme=light"></iframe>
+<iframe src="https://api.docle.co/embed?theme=light"></iframe>
 ```
 
 **Read-only (demo mode):**
 ```html
-<iframe src="https://docle.workers.dev/embed?readonly=true"></iframe>
+<iframe src="https://api.docle.co/embed?readonly=true"></iframe>
 ```
 
 ## PostMessage API
@@ -113,7 +113,7 @@ Embed runnable code examples in your docs:
 ```html
 <h2>API Example</h2>
 <p>Here's how to use our API:</p>
-<iframe src="https://docle.workers.dev/embed?lang=python&code=import%20requests%0Aresponse%20%3D%20requests.get('https://api.example.com')%0Aprint(response.json())"></iframe>
+<iframe src="https://api.docle.co/embed?lang=python&code=import%20requests%0Aresponse%20%3D%20requests.get('https://api.example.com')%0Aprint(response.json())"></iframe>
 ```
 
 ### 2. Tutorial/Learning Platform
@@ -123,7 +123,7 @@ Create interactive coding lessons:
 <div class="lesson">
   <h3>Lesson 1: Variables</h3>
   <p>Try changing the values:</p>
-  <iframe src="https://docle.workers.dev/embed?lang=python&code=x%20%3D%2042%0Ay%20%3D%2010%0Aprint(x%20%2B%20y)"></iframe>
+  <iframe src="https://api.docle.co/embed?lang=python&code=x%20%3D%2042%0Ay%20%3D%2010%0Aprint(x%20%2B%20y)"></iframe>
 </div>
 ```
 
@@ -132,7 +132,7 @@ Embed coding challenges for hiring or education:
 
 ```html
 <iframe 
-  src="https://docle.workers.dev/embed?lang=python&code=def%20solution()%3A%0A%20%20%20%20%23%20TODO%3A%20Implement%20me%0A%20%20%20%20pass"
+  src="https://api.docle.co/embed?lang=python&code=def%20solution()%3A%0A%20%20%20%20%23%20TODO%3A%20Implement%20me%0A%20%20%20%20pass"
   id="challenge"
 ></iframe>
 <button onclick="checkSolution()">Submit Solution</button>
@@ -143,7 +143,7 @@ Let users try your product without signup:
 
 ```html
 <h2>Try Our Data Processing API</h2>
-<iframe src="https://docle.workers.dev/embed?lang=python&code=from%20your_sdk%20import%20process_data%0A%0Adata%20%3D%20%5B1%2C%202%2C%203%5D%0Aresult%20%3D%20process_data(data)%0Aprint(result)"></iframe>
+<iframe src="https://api.docle.co/embed?lang=python&code=from%20your_sdk%20import%20process_data%0A%0Adata%20%3D%20%5B1%2C%202%2C%203%5D%0Aresult%20%3D%20process_data(data)%0Aprint(result)"></iframe>
 ```
 
 ## Next Steps

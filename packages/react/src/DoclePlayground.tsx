@@ -57,7 +57,7 @@ export function DoclePlayground({
   }, [handleMessage]);
 
   // Build iframe URL
-  const baseUrl = endpoint || (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 'https://docle.workers.dev';
+  const baseUrl = endpoint || (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 'https://api.docle.co';
   const params = new URLSearchParams({
     lang,
     theme,

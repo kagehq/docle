@@ -193,13 +193,13 @@ Override the default Docle API endpoint:
 
 ```tsx
 // Per-component
-<DoclePlayground endpoint="https://your-docle.workers.dev" />
+<DoclePlayground endpoint="https://api.docle.co" />
 
 // Per-hook
-const { run } = useDocle({ endpoint: "https://your-docle.workers.dev" });
+const { run } = useDocle({ endpoint: "https://api.docle.co" });
 
 // Globally
-window.DOCLE_ENDPOINT = "https://your-docle.workers.dev";
+window.DOCLE_ENDPOINT = "https://api.docle.co";
 ```
 
 ### Styling
