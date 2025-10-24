@@ -1,6 +1,6 @@
 name = "docle"
 main = "src/index.ts"
-compatibility_date = "2024-10-01"
+compatibility_date = "2025-05-06"
 compatibility_flags = ["nodejs_compat"]
 
 # KV for run logs & index
@@ -9,21 +9,28 @@ binding = "RUNS"
 id = "809528141f1a4f7b89c7d84499ee8c77"
 preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 
-# Sandbox for secure code execution (requires Workers Paid plan + Docker)
-[containers]
-SANDBOX = { dockerfile = "./Dockerfile" }
-
 [vars]
 APP_NAME = "Docle"
 
-# Durable Objects for collaborative editing
-# Note: Works in production, but has issues in local dev with this Wrangler version
-# Uncomment these when deploying to Cloudflare Workers
-# [[durable_objects.bindings]]
-# name = "COLLAB_SESSION"
-# class_name = "CollabSession"
+# Migrations - Deleted old Sandbox
+[[migrations]]
+tag = "v3"
+deleted_classes = ["Sandbox"]
 
-# [[migrations]]
-# tag = "v1"
-# new_classes = ["CollabSession"]
+# Create new SQLite-backed Sandbox with Containers
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["Sandbox"]
+
+# Cloudflare Sandbox Container
+[[containers]]
+class_name = "Sandbox"
+image = "./Dockerfile"
+name = "sandbox"
+max_instances = 10
+
+# Durable Object binding for Sandbox
+[[durable_objects.bindings]]
+name = "SANDBOX"
+class_name = "Sandbox"
 

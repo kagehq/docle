@@ -5,6 +5,10 @@ import { saveRun, Env } from "./lib/kv";
 import { runInSandbox, simulateExec } from "./lib/sandbox";
 import { CollabSession } from "./lib/collab";
 
+// Export Sandbox Durable Object from @cloudflare/sandbox
+import { Sandbox as CloudflareSandbox } from '@cloudflare/sandbox';
+export const Sandbox = CloudflareSandbox;
+
 const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
 

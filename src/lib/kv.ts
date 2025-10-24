@@ -1,6 +1,8 @@
+import type { Sandbox } from '@cloudflare/sandbox';
+
 export type Env = { 
   RUNS: KVNamespace; 
-  SANDBOX?: any; // Cloudflare Sandbox binding
+  SANDBOX: DurableObjectNamespace<Sandbox>; // Cloudflare Sandbox binding (Durable Object)
   COLLAB_SESSION: DurableObjectNamespace; // Collaborative editing sessions
   APP_NAME: string;
 };
