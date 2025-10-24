@@ -12,11 +12,6 @@ preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 [vars]
 APP_NAME = "Docle"
 
-# Create CollabSession Durable Object for real-time collaboration
-[[migrations]]
-tag = "v5"
-new_classes = ["CollabSession"]
-
 # NOTE: Cloudflare Sandbox with Containers requires beta access
 # For now, we'll use simulation mode until containers are enabled
 # [[containers]]
