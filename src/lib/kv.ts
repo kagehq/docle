@@ -1,8 +1,9 @@
+import type { Sandbox } from '@cloudflare/sandbox';
 import type { CollabSession } from './collab';
 
 export type Env = { 
   RUNS: KVNamespace; 
-  SANDBOX?: any; // Optional: Cloudflare Sandbox binding (requires beta access)
+  SANDBOX: DurableObjectNamespace<Sandbox>; // Cloudflare Sandbox binding (Durable Object)
   COLLAB_SESSION: DurableObjectNamespace<CollabSession>; // Collaborative editing sessions
   APP_NAME: string;
 };

@@ -982,7 +982,7 @@ const getStatusColor = () => {
                 No runs yet
               </div>
               
-              <div v-else class="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+              <div v-else class="space-y-2 max-h-[800px] overflow-y-auto pr-2">
                 <div 
                   v-for="(item, idx) in history.slice(0, 20)" 
                   :key="idx"

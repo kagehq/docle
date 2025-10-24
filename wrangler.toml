@@ -12,17 +12,21 @@ preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 [vars]
 APP_NAME = "Docle"
 
-# NOTE: Cloudflare Sandbox with Containers requires beta access
-# For now, we'll use simulation mode until containers are enabled
-# [[containers]]
-# class_name = "Sandbox"
-# image = "./Dockerfile"
-# name = "sandbox"
-# max_instances = 10
+# Enable Cloudflare Sandbox
+[[migrations]]
+tag = "v7"
+new_sqlite_classes = ["Sandbox"]
 
-# [[durable_objects.bindings]]
-# name = "SANDBOX"
-# class_name = "Sandbox"
+# Cloudflare Sandbox with Containers
+[[containers]]
+class_name = "Sandbox"
+image = "./Dockerfile"
+name = "sandbox"
+max_instances = 10
+
+[[durable_objects.bindings]]
+name = "SANDBOX"
+class_name = "Sandbox"
 
 # Durable Object binding for Collaborative Sessions
 [[durable_objects.bindings]]
