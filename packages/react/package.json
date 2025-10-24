@@ -1,5 +1,5 @@
 {
-  "name": "@docle/react",
+  "name": "@doclehq/react",
   "version": "0.1.0",
   "description": "React components for Docle code execution",
   "type": "module",

@@ -1,9 +1,33 @@
 {
-  "name": "@docle/sdk",
+  "name": "@doclehq/sdk",
   "version": "0.1.0",
+  "description": "JavaScript SDK for Docle code execution",
   "type": "module",
-  "main": "index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "docle",
+    "sandbox",
+    "code-execution",
+    "cloudflare"
+  ],
   "license": "MIT",
-  "private": false
+  "private": false,
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
 }
 

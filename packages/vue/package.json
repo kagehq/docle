@@ -1,5 +1,5 @@
 {
-  "name": "@docle/vue",
+  "name": "@doclehq/vue",
   "version": "0.1.0",
   "description": "Vue 3 components for Docle embedded sandbox",
   "type": "module",
@@ -41,7 +41,7 @@
     "vue-tsc": "^2.0.0"
   },
   "dependencies": {
-    "@docle/sdk": "*"
+    "@doclehq/sdk": "*"
   }
 }
 
