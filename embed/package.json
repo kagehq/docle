@@ -1,6 +1,6 @@
 {
   "name": "@doclehq/embed",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CDN embed script for Docle",
   "type": "module",
   "main": "./dist/embed.js",

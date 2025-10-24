@@ -6,8 +6,8 @@ import { runInSandbox, simulateExec } from "./lib/sandbox";
 import { CollabSession } from "./lib/collab";
 
 // Export Sandbox Durable Object for Container integration (Production only)
-// Uncomment for production deploys, comment out for local dev
-// export { Sandbox } from '@cloudflare/sandbox';
+// Required for production deploys
+export { Sandbox } from '@cloudflare/sandbox';
 
 const app = new Hono<{ Bindings: Env }>();
 app.use("*", cors());
