@@ -84,19 +84,35 @@ app.get("/api/run/:id", async (c) => {
   return c.json(JSON.parse(raw));
 });
 
+// Debug endpoint
+app.get("/collab/test", (c) => {
+  return c.json({ 
+    message: "Collab routing works!",
+    hasBinding: !!c.env.COLLAB_SESSION 
+  });
+});
+
 // Collaborative editing WebSocket endpoint
 app.get("/collab/:sessionId/websocket", async (c) => {
   const sessionId = c.req.param("sessionId");
   
   if (!c.env.COLLAB_SESSION) {
-    return c.json({ error: "Collaborative editing not available" }, 503);
+    return c.json({ 
+      error: "Collaborative editing not available",
+      sessionId,
+      hasBinding: false
+    }, 503);
   }
   
-  const id = c.env.COLLAB_SESSION.idFromName(sessionId);
-  const stub = c.env.COLLAB_SESSION.get(id);
-  
-  // Forward the WebSocket upgrade request to the Durable Object
-  return stub.fetch(c.req.raw);
+  try {
+    const id = c.env.COLLAB_SESSION.idFromName(sessionId);
+    const stub = c.env.COLLAB_SESSION.get(id);
+    
+    // Forward the WebSocket upgrade request to the Durable Object
+    return stub.fetch(c.req.raw);
+  } catch (e: any) {
+    return c.json({ error: e.message, sessionId }, 500);
+  }
 });
 
 // Collaborative editing state endpoint
@@ -107,11 +123,15 @@ app.get("/collab/:sessionId/state", async (c) => {
     return c.json({ error: "Collaborative editing not available" }, 503);
   }
   
-  const id = c.env.COLLAB_SESSION.idFromName(sessionId);
-  const stub = c.env.COLLAB_SESSION.get(id);
-  
-  // Forward the state request to the Durable Object
-  return stub.fetch(c.req.raw);
+  try {
+    const id = c.env.COLLAB_SESSION.idFromName(sessionId);
+    const stub = c.env.COLLAB_SESSION.get(id);
+    
+    // Forward the state request to the Durable Object
+    return stub.fetch(c.req.raw);
+  } catch (e: any) {
+    return c.json({ error: e.message, sessionId }, 500);
+  }
 });
 
 export default app;
