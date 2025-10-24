@@ -12,7 +12,7 @@ Docle makes it instant. Add code execution to your app in 5 minutes. No servers,
 
 ```html
 <!-- Literally one line -->
-<script src="https://docle-api.onboardbase.workers.dev/embed.js"></script>
+<script src="https://api.docle.co/embed.js"></script>
 <div data-docle>print("Hello, World!")</div>
 ```
 
@@ -45,7 +45,7 @@ Visit http://localhost:8787/playground
 ### REST API
 
 ```bash
-curl -X POST https://docle-api.onboardbase.workers.dev/api/run \
+curl -X POST https://api.docle.co/api/run \
   -H "Content-Type: application/json" \
   -d '{
     "code": "print(\"Hello, Docle!\")",
@@ -102,7 +102,7 @@ import { DoclePlayground } from '@docle/vue';
 ### CDN Embed
 
 ```html
-<script src="https://docle-api.onboardbase.workers.dev/embed.js"></script>
+<script src="https://api.docle.co/embed.js"></script>
 <div data-docle data-lang="python">
 print("Hello, Docle!")
 </div>

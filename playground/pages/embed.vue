@@ -35,7 +35,7 @@ const runCode = async () => {
     // Use production API or local proxy
     const apiUrl = window.location.hostname === 'localhost'
       ? '/api/run'  // Use local proxy in development
-      : 'https://docle-api.onboardbase.workers.dev/api/run'  // Production API
+      : 'https://api.docle.co/api/run'  // Production API
     
     const res = await fetch(apiUrl, {
       method: 'POST',

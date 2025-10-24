@@ -29,7 +29,7 @@ app.get("/", (c) => {
       "POST /api/run": "Execute code",
       "GET /api/run/:id": "Get execution result by ID"
     },
-    playground: "https://docle.dev", // Update with your deployed Nuxt URL
+    playground: "https://app.docle.co",
     docs: "https://github.com/kagehq/docle"
   });
 });
