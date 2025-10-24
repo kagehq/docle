@@ -408,6 +408,23 @@ const toggleMultiFile = () => {
   showToast(isMultiFile.value ? 'Multi-file mode enabled' : 'Single-file mode enabled', 'success')
 }
 
+// Watch for session ID changes to auto-connect
+watch(sessionId, (newSessionId, oldSessionId) => {
+  if (newSessionId && newSessionId !== oldSessionId) {
+    // New collaboration session started
+    myUserId.value = getUserId()
+    connectWebSocket()
+  } else if (!newSessionId && oldSessionId) {
+    // Session ended, disconnect
+    if (ws.value) {
+      ws.value.close()
+      ws.value = null
+    }
+    isConnected.value = false
+    users.value = []
+  }
+})
+
 // Watch for code changes and sync via WebSocket
 let sendUpdateTimeout: NodeJS.Timeout | null = null
 watch([() => files.value[activeFileIdx.value]?.content, lang], () => {

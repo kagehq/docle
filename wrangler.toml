@@ -22,11 +22,6 @@ deleted_classes = ["Sandbox"]
 tag = "v5"
 new_classes = ["CollabSession"]
 
-# Delete Sandbox class (moved to preview mode)
-[[migrations]]
-tag = "v6"
-deleted_classes = ["Sandbox"]
-
 # NOTE: Cloudflare Sandbox with Containers requires beta access
 # For now, we'll use simulation mode until containers are enabled
 # [[containers]]
