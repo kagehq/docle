@@ -41,19 +41,68 @@ const history = ref<any[]>([])
 const lastRunResult = ref<any>(null)
 
 // Collab state
-const users = ref<string[]>(['You'])
+const myUserId = ref<string>('')
+const users = ref<{id: string, name: string}[]>([])
 const isConnected = ref(false)
 
 // Toast notification
 const toast = ref({ show: false, message: '', type: 'success' as 'success' | 'error' })
+
+// Generate or get user ID
+const getUserId = () => {
+  let userId = localStorage.getItem('docle_user_id')
+  if (!userId) {
+    userId = `User-${Math.random().toString(36).substr(2, 6)}`
+    localStorage.setItem('docle_user_id', userId)
+  }
+  return userId
+}
 
 // Load history
 onMounted(() => {
   const stored = localStorage.getItem('docle_history')
   if (stored) history.value = JSON.parse(stored)
   
+  // Initialize user ID
+  myUserId.value = getUserId()
+  
   if (isCollabMode.value) {
-    setTimeout(() => { isConnected.value = true }, 1000)
+    // Simulate connection
+    setTimeout(() => { 
+      isConnected.value = true 
+      
+      // Get existing users or initialize
+      const sessionUsers = localStorage.getItem(`collab_${sessionId.value}_users`)
+      let parsedUsers: {id: string, name: string}[] = []
+      
+      if (sessionUsers) {
+        parsedUsers = JSON.parse(sessionUsers)
+        // Add yourself if not already in the list
+        if (!parsedUsers.find(u => u.id === myUserId.value)) {
+          parsedUsers.push({ id: myUserId.value, name: myUserId.value })
+          localStorage.setItem(`collab_${sessionId.value}_users`, JSON.stringify(parsedUsers))
+        }
+      } else {
+        // You're the first user
+        parsedUsers = [{ id: myUserId.value, name: myUserId.value }]
+        localStorage.setItem(`collab_${sessionId.value}_users`, JSON.stringify(parsedUsers))
+      }
+      
+      // Display users (show "You" for yourself)
+      users.value = parsedUsers.map((u: any) => 
+        u.id === myUserId.value ? { id: u.id, name: 'You' } : u
+      )
+    }, 1000)
+    
+    // Listen for storage changes (other tabs/users joining)
+    window.addEventListener('storage', (e) => {
+      if (e.key === `collab_${sessionId.value}_users` && e.newValue) {
+        const parsedUsers = JSON.parse(e.newValue)
+        users.value = parsedUsers.map((u: any) => 
+          u.id === myUserId.value ? { id: u.id, name: 'You' } : u
+        )
+      }
+    })
   }
 })
 
@@ -211,6 +260,11 @@ const toggleMultiFile = () => {
 // Collab operations
 const startCollabSession = () => {
   const newSessionId = crypto.randomUUID()
+  
+  // Initialize session with current user
+  const currentUser = { id: myUserId.value, name: myUserId.value }
+  localStorage.setItem(`collab_${newSessionId}_users`, JSON.stringify([currentUser]))
+  
   navigateTo(`/?session=${newSessionId}`)
   showToast('Collaborative session started', 'success')
 }
@@ -304,8 +358,12 @@ const getStatusColor = () => {
                     v-for="(user, idx) in users" 
                     :key="idx"
                     class="flex items-center gap-2 px-2 py-0.5 rounded-full bg-gray-500/10 text-xs">
-                    <div class="w-2 h-2 rounded-full bg-blue-300"></div>
-                    <span>{{ user }}</span>
+                    <div 
+                      class="w-2 h-2 rounded-full"
+                      :class="user.id === myUserId ? 'bg-green-300' : 'bg-blue-300'"></div>
+                    <span :class="user.id === myUserId ? 'text-green-300 font-medium' : 'text-gray-300'">
+                      {{ user.name }}
+                    </span>
                   </div>
                 </div>
                 <span class="text-xs text-blue-300 font-mono">Session: {{ sessionId?.slice(0, 8) }}...</span>
