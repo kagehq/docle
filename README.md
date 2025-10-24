@@ -171,7 +171,7 @@ npm run format     # Format code
 
 ## License
 
-MIT
+FSL-1.1-MIT - See [LICENSE](./LICENSE) for details.
 
 ---
 
