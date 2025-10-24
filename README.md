@@ -100,8 +100,8 @@ import { DoclePlayground } from '@doclehq/vue';
 <!-- From unpkg CDN (Recommended) -->
 <script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
 
-<!-- Or from your deployed Worker -->
-<script src="https://docle.onboardbase.workers.dev/embed.js"></script>
+<!-- Or from your API domain -->
+<script src="https://api.docle.co/embed.js"></script>
 
 <!-- Use anywhere -->
 <div data-docle data-lang="python">
@@ -155,7 +155,7 @@ npm run deploy
 
 Your API will be live at `https://docle.YOUR-SUBDOMAIN.workers.dev`
 
-**Current deployment:** https://docle.onboardbase.workers.dev
+**Current deployment:** https://api.docle.co
 
 ## Documentation
 
