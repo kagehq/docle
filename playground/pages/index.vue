@@ -127,15 +127,17 @@ const handleWebSocketMessage = (msg: any) => {
       break
       
     case 'join':
-      // New user joined
-      const existingUser = users.value.find(u => u.id === msg.userId)
-      if (!existingUser) {
-        users.value.push({
-          id: msg.userId,
-          name: msg.data.name,
-          color: msg.data.color
-        })
-        showToast(`${msg.data.name} joined`, 'success')
+      // New user joined (don't add yourself)
+      if (msg.userId !== myUserId.value) {
+        const existingUser = users.value.find(u => u.id === msg.userId)
+        if (!existingUser) {
+          users.value.push({
+            id: msg.userId,
+            name: msg.data.name,
+            color: msg.data.color
+          })
+          showToast(`${msg.data.name} joined`, 'success')
+        }
       }
       break
       
@@ -387,13 +389,13 @@ const toggleMultiFile = () => {
 
 // Watch for code changes and sync via WebSocket
 let sendUpdateTimeout: NodeJS.Timeout | null = null
-watch([code, lang], () => {
-  if (isCollabMode.value) {
+watch([() => files.value[activeFileIdx.value]?.content, lang], () => {
+  if (isCollabMode.value && isConnected.value) {
     // Debounce updates to avoid flooding the server
     if (sendUpdateTimeout) clearTimeout(sendUpdateTimeout)
     sendUpdateTimeout = setTimeout(() => {
       sendCodeUpdate()
-    }, 500) // Send update 500ms after user stops typing
+    }, 300) // Send update 300ms after user stops typing
   }
 })
 
