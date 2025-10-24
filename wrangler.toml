@@ -17,27 +17,22 @@ APP_NAME = "Docle"
 tag = "v3"
 deleted_classes = ["Sandbox"]
 
-# Create new SQLite-backed Sandbox with Containers
-[[migrations]]
-tag = "v4"
-new_sqlite_classes = ["Sandbox"]
-
 # Create CollabSession Durable Object for real-time collaboration
 [[migrations]]
 tag = "v5"
 new_classes = ["CollabSession"]
 
-# Cloudflare Sandbox Container
-[[containers]]
-class_name = "Sandbox"
-image = "./Dockerfile"
-name = "sandbox"
-max_instances = 10
+# NOTE: Cloudflare Sandbox with Containers requires beta access
+# For now, we'll use simulation mode until containers are enabled
+# [[containers]]
+# class_name = "Sandbox"
+# image = "./Dockerfile"
+# name = "sandbox"
+# max_instances = 10
 
-# Durable Object binding for Sandbox
-[[durable_objects.bindings]]
-name = "SANDBOX"
-class_name = "Sandbox"
+# [[durable_objects.bindings]]
+# name = "SANDBOX"
+# class_name = "Sandbox"
 
 # Durable Object binding for Collaborative Sessions
 [[durable_objects.bindings]]

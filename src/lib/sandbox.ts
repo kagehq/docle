@@ -108,9 +108,19 @@ export async function runInSandbox(
   } catch (error: any) {
     const durationMs = Date.now() - start;
     
+    // Enhanced error logging
+    console.error('Sandbox execution error:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+      cause: error?.cause,
+      status: error?.status,
+      response: error?.response
+    });
+    
     return {
       stdout: "",
-      stderr: error?.message || String(error),
+      stderr: `SandboxError: ${error?.message || String(error)}${error?.cause ? `\nCause: ${error.cause}` : ''}`,
       exitCode: error?.name === "TimeoutError" ? 124 : 1,
       usage: { durationMs }
     };
@@ -182,8 +192,8 @@ async function installPackages(
 }
 
 /**
- * Fallback simulation for local development when Sandbox binding is not available.
- * Used in `--local` mode where Sandbox isn't accessible.
+ * Fallback simulation for when Sandbox binding is not available.
+ * This provides a preview of what the code would execute.
  */
 export async function simulateExec(
   options: SandboxRunOptions,
@@ -202,9 +212,29 @@ export async function simulateExec(
   } else {
     // Simulate execution
     const code = options.code || options.files?.map(f => f.content).join('\n') || '';
-    const fileInfo = options.files ? `(${options.files.length} files)` : '';
-    const pkgInfo = options.packages ? `\nPackages: ${options.packages.join(', ')}` : '';
-    stdout = `🔒 [docle simulated ${lang}] ${fileInfo}${pkgInfo}\n${code.slice(0, 200)}`;
+    const fileInfo = options.files ? ` (${options.files.length} files)` : '';
+    const pkgInfo = options.packages && options.packages.length > 0 
+      ? `\n📦 Packages: ${options.packages.join(', ')}` 
+      : '';
+    
+    stdout = `✅ Docle Sandbox (Preview Mode)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 Language: ${lang}${fileInfo}${pkgInfo}
+⚡ Timeout: ${policy.timeoutMs}ms
+🔒 Memory: ${policy.memoryMB}MB
+🌐 Network: ${policy.allowNet ? 'Enabled' : 'Disabled'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ℹ️  Sandbox is running in preview mode.
+To enable real code execution:
+1. Request beta access: https://cloudflare.com/sandbox-beta
+2. Enable Containers in wrangler.toml
+3. Redeploy your Worker
+
+Your code will execute:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${code}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   }
   
   const durationMs = Date.now() - start;
@@ -213,7 +243,7 @@ export async function simulateExec(
     stdout, 
     stderr, 
     exitCode, 
-    usage: { cpuMs: 5, memMB: 32, durationMs } 
+    usage: { cpuMs: 0, memMB: 0, durationMs } 
   };
 }
 
