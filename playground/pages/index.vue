@@ -144,9 +144,20 @@ const handleWebSocketMessage = (msg: any) => {
     case 'leave':
       // User left
       const leftUser = users.value.find(u => u.id === msg.userId)
-      if (leftUser) {
+      if (leftUser && leftUser.name !== 'You') {
         users.value = users.value.filter(u => u.id !== msg.userId)
-        showToast(`${leftUser.name} left`, 'success')
+        showToast(`${leftUser.name} left the session`, 'error')
+        
+        // If you're now alone, show a message
+        const otherUsers = users.value.filter(u => u.name !== 'You')
+        if (otherUsers.length === 0) {
+          showToast('You are now alone. Session will end in 10 seconds...', 'error')
+          setTimeout(() => {
+            if (isCollabMode.value && users.value.filter(u => u.name !== 'You').length === 0) {
+              leaveCollaboration()
+            }
+          }, 10000)
+        }
       }
       break
       
@@ -226,10 +237,20 @@ onMounted(() => {
 
 // Cleanup on unmount
 onUnmounted(() => {
-  if (ws.value) {
+  if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+    // WebSocket will trigger 'close' event which notifies server
     ws.value.close()
   }
 })
+
+// Handle browser close/refresh to properly disconnect
+if (process.client) {
+  window.addEventListener('beforeunload', () => {
+    if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+      ws.value.close()
+    }
+  })
+}
 
 // Show toast notification
 const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -412,13 +433,20 @@ const copyShareLink = () => {
 }
 
 const leaveCollaboration = () => {
+  // Close WebSocket connection (this triggers 'leave' broadcast on server)
   if (ws.value) {
-    ws.value.close()
+    if (ws.value.readyState === WebSocket.OPEN) {
+      ws.value.close()
+    }
     ws.value = null
   }
+  
+  // Reset state
   isConnected.value = false
   users.value = []
   reconnectAttempts.value = maxReconnectAttempts // Prevent reconnection attempts
+  
+  // Navigate back to regular playground
   navigateTo('/')
   showToast('Left collaboration session', 'success')
 }
