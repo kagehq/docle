@@ -3,11 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2024-10-01"
 compatibility_flags = ["nodejs_compat"]
 
-# KV for run logs & index (replace IDs after `wrangler kv namespace create`)
+# KV for run logs & index
 [[kv_namespaces]]
 binding = "RUNS"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-preview_id = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+id = "809528141f1a4f7b89c7d84499ee8c77"
+preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 
 # Sandbox for secure code execution (requires Workers Paid plan)
 # Note: In production, you'll need to configure this properly
