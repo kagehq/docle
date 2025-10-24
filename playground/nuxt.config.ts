@@ -4,7 +4,14 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
   
-  // API proxy to your Worker
+  // Runtime config for API endpoint
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://docle-api.onboardbase.workers.dev'
+    }
+  },
+  
+  // API proxy to your Worker (for local development)
   nitro: {
     devProxy: {
       '/api': {

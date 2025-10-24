@@ -124,7 +124,13 @@ const runCode = async () => {
       payload.packages = { packages: packages.value }
     }
     
-    const response = await $fetch('/api/run', {
+    // Use production API or local proxy
+    const config = useRuntimeConfig()
+    const apiUrl = process.client && window.location.hostname === 'localhost' 
+      ? '/api/run'  // Use local proxy in development
+      : `${config.public.apiBase}/api/run`  // Use production API
+    
+    const response = await $fetch(apiUrl, {
       method: 'POST',
       body: payload
     })

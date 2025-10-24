@@ -32,7 +32,12 @@ const runCode = async () => {
   try {
     console.log('Running code:', { lang: lang.value, code: code.value })
     
-    const res = await fetch('/api/run', {
+    // Use production API or local proxy
+    const apiUrl = window.location.hostname === 'localhost'
+      ? '/api/run'  // Use local proxy in development
+      : 'https://docle-api.onboardbase.workers.dev/api/run'  // Production API
+    
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
