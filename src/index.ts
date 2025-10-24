@@ -104,8 +104,13 @@ app.get("/collab/:sessionId/websocket", async (c) => {
     const id = c.env.COLLAB_SESSION.idFromName(sessionId);
     const stub = c.env.COLLAB_SESSION.get(id);
     
+    // Create a new request with just /websocket path for the DO
+    const url = new URL(c.req.url);
+    url.pathname = '/websocket';
+    const doRequest = new Request(url, c.req.raw);
+    
     // Forward the WebSocket upgrade request to the Durable Object
-    return stub.fetch(c.req.raw);
+    return stub.fetch(doRequest);
   } catch (e: any) {
     return c.json({ error: e.message, sessionId }, 500);
   }
@@ -123,8 +128,13 @@ app.get("/collab/:sessionId/state", async (c) => {
     const id = c.env.COLLAB_SESSION.idFromName(sessionId);
     const stub = c.env.COLLAB_SESSION.get(id);
     
+    // Create a new request with just /state path for the DO
+    const url = new URL(c.req.url);
+    url.pathname = '/state';
+    const doRequest = new Request(url, c.req.raw);
+    
     // Forward the state request to the Durable Object
-    return stub.fetch(c.req.raw);
+    return stub.fetch(doRequest);
   } catch (e: any) {
     return c.json({ error: e.message, sessionId }, 500);
   }
