@@ -9,12 +9,10 @@ binding = "RUNS"
 id = "809528141f1a4f7b89c7d84499ee8c77"
 preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 
-# Sandbox for secure code execution (requires Workers Paid plan)
-# Note: In production, you'll need to configure this properly
-# For now, we'll use the simulation fallback in local mode
-# [[workflows]]
-# binding = "SANDBOX"
-# name = "sandbox"
+# Sandbox for secure code execution (requires Workers Paid plan + Docker)
+[[containers]]
+binding = "SANDBOX"
+image_source = "./Dockerfile"
 
 [vars]
 APP_NAME = "Docle"
