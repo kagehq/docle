@@ -20,11 +20,13 @@ preview_id = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
 APP_NAME = "Docle"
 
 # Durable Objects for collaborative editing
-[[durable_objects.bindings]]
-name = "COLLAB_SESSION"
-class_name = "CollabSession"
+# Note: Works in production, but has issues in local dev with this Wrangler version
+# Uncomment these when deploying to Cloudflare Workers
+# [[durable_objects.bindings]]
+# name = "COLLAB_SESSION"
+# class_name = "CollabSession"
 
-[[migrations]]
-tag = "v1"
-new_classes = ["CollabSession"]
+# [[migrations]]
+# tag = "v1"
+# new_classes = ["CollabSession"]
 

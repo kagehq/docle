@@ -1,0 +1,166 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+// Get params from URL
+const route = useRoute()
+const lang = ref<'python' | 'node'>(route.query.lang as any || 'python')
+const code = ref(decodeURIComponent((route.query.code as string) || ''))
+const theme = ref(route.query.theme || 'dark')
+const readonly = ref(route.query.readonly === 'true')
+const showOutput = ref(route.query.showOutput !== 'false')
+const autorun = ref(route.query.autorun === 'true')
+
+// State
+const output = ref('')
+const isRunning = ref(false)
+const lastRunResult = ref<any>(null)
+
+// Initialize code if empty
+if (!code.value) {
+  code.value = lang.value === 'python'
+    ? 'print("Hello from embedded Docle!")'
+    : 'console.log("Hello from embedded Docle!");'
+}
+
+// Run code
+const runCode = async () => {
+  if (isRunning.value) return
+  
+  isRunning.value = true
+  output.value = 'Running...'
+  
+  try {
+    console.log('Running code:', { lang: lang.value, code: code.value })
+    
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lang: lang.value,
+        code: code.value,
+        timeout: 10000
+      })
+    })
+    
+    console.log('Response status:', res.status)
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+    }
+    
+    const result = await res.json()
+    console.log('Result:', result)
+    
+    lastRunResult.value = result
+    
+    // Extract output from result (API returns stdout/stderr)
+    const combinedOutput = [result.stdout, result.stderr]
+      .filter(Boolean)
+      .join('\n')
+      .trim()
+    
+    output.value = combinedOutput || '(no output)'
+    
+    // Post message to parent
+    window.parent.postMessage({
+      type: 'docle-result',
+      data: result
+    }, '*')
+    
+  } catch (error: any) {
+    console.error('Error running code:', error)
+    output.value = `Error: ${error.message}`
+    window.parent.postMessage({
+      type: 'docle-error',
+      data: { error: error.message }
+    }, '*')
+  } finally {
+    isRunning.value = false
+  }
+}
+
+// Listen for messages from parent
+onMounted(() => {
+  // Notify parent that iframe is ready
+  window.parent.postMessage({ type: 'docle-ready', data: {} }, '*')
+  
+  // Listen for commands
+  window.addEventListener('message', (event) => {
+    const { type, code: newCode } = event.data
+    
+    if (type === 'docle-run') {
+      runCode()
+    } else if (type === 'docle-set-code' && newCode) {
+      code.value = newCode
+    }
+  })
+  
+  // Autorun if requested
+  if (autorun.value) {
+    runCode()
+  }
+})
+</script>
+
+<template>
+  <div class="h-screen bg-black text-white flex flex-col overflow-hidden">
+    <!-- Minimal Header -->
+    <div class="border-b border-gray-500/20 px-3 py-2 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-5 h-5 rounded bg-green-300 flex items-center justify-center text-black font-bold text-xs">
+          D
+        </div>
+        <span class="text-xs text-gray-500">Embedded Playground</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <div class="relative">
+          <select 
+            v-model="lang" 
+            :disabled="readonly"
+            class="pl-3 pr-8 py-1.5 text-xs rounded-lg bg-gray-500/10 border border-gray-500/10 text-white appearance-none cursor-pointer hover:border-gray-500/20 focus:border-gray-500/30 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            <option value="python">Python</option>
+            <option value="node">Node.js</option>
+          </select>
+          <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+        
+        <button 
+          @click="runCode"
+          :disabled="isRunning || readonly"
+          class="px-3 py-1.5 text-xs rounded-lg bg-green-300 text-black font-medium hover:bg-green-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ isRunning ? 'Running...' : 'Run' }}
+        </button>
+      </div>
+    </div>
+    
+    <!-- Editor -->
+    <div class="flex-1 overflow-hidden">
+      <textarea
+        v-model="code"
+        :readonly="readonly"
+        class="w-full h-full p-4 bg-black text-white font-mono text-sm resize-none focus:outline-none"
+        :class="readonly ? 'cursor-not-allowed opacity-75' : ''"
+        spellcheck="false"
+      ></textarea>
+    </div>
+    
+    <!-- Output -->
+    <div v-if="showOutput" class="h-48 bg-gray-500/10 border-t border-gray-500/10 overflow-hidden flex flex-col flex-shrink-0">
+      <div class="px-3 py-2 border-b border-gray-500/10 flex items-center justify-between">
+        <span class="text-xs font-semibold text-white">Output</span>
+        <div v-if="lastRunResult" class="flex items-center gap-3 text-xs">
+          <span class="text-gray-500">Exit: <span :class="lastRunResult.ok ? 'text-green-400' : 'text-red-400'">{{ lastRunResult.exitCode }}</span></span>
+          <span class="text-gray-500">Time: <span class="text-gray-300">{{ lastRunResult.usage?.durationMs || 0 }}ms</span></span>
+        </div>
+      </div>
+      <pre :class="[
+        'flex-1 p-3 overflow-auto text-xs font-mono',
+        output ? 'text-gray-300' : 'text-gray-600'
+      ]">{{ output || '— Run your code to see output' }}</pre>
+    </div>
+  </div>
+</template>
+

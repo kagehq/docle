@@ -1,7 +1,7 @@
 export type Env = { 
   RUNS: KVNamespace; 
-  SANDBOX: any; // Cloudflare Sandbox binding
-  COLLAB_SESSION?: DurableObjectNamespace; // Collaborative editing sessions
+  SANDBOX?: any; // Cloudflare Sandbox binding
+  COLLAB_SESSION: DurableObjectNamespace; // Collaborative editing sessions
   APP_NAME: string;
 };
 

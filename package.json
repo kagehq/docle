@@ -10,6 +10,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local",
+    "dev:playground": "cd playground && npm run dev",
+    "start": "npm run dev & npm run dev:playground",
     "deploy": "wrangler deploy",
     "format": "prettier -w .",
     "typecheck": "tsc -p ."
