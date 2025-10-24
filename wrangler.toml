@@ -3,11 +3,6 @@ main = "src/index.ts"
 compatibility_date = "2024-10-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Pages configuration (for frontend deployment)
-# Note: If Root directory is set to "playground" in Pages settings, 
-# the build output is relative to that directory
-pages_build_output_dir = ".output/public"
-
 # KV for run logs & index
 [[kv_namespaces]]
 binding = "RUNS"
