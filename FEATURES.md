@@ -75,13 +75,13 @@ iframe.contentWindow.postMessage({
 **Installation:**
 
 ```bash
-npm install @docle/react
+npm install @doclehq/react
 ```
 
 **Component Usage:**
 
 ```tsx
-import { DoclePlayground } from '@docle/react';
+import { DoclePlayground } from '@doclehq/react';
 
 function App() {
   return (
@@ -101,7 +101,7 @@ function App() {
 **Headless Hook:**
 
 ```tsx
-import { useDocle } from '@docle/react';
+import { useDocle } from '@doclehq/react';
 import { useState } from 'react';
 
 function CustomEditor() {
@@ -132,14 +132,14 @@ function CustomEditor() {
 **Installation:**
 
 ```bash
-npm install @docle/vue
+npm install @doclehq/vue
 ```
 
 **Component Usage:**
 
 ```vue
 <script setup>
-import { DoclePlayground } from '@docle/vue';
+import { DoclePlayground } from '@doclehq/vue';
 
 const handleRun = (result) => {
   console.log('Output:', result.stdout);
@@ -160,7 +160,7 @@ const handleRun = (result) => {
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { useDocle } from '@docle/vue';
+import { useDocle } from '@doclehq/vue';
 
 const { run, result, loading, error } = useDocle();
 const code = ref('print("Hello!")');

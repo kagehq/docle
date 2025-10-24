@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>@docle/vue Demo</title>
+  <title>@doclehq/vue Demo</title>
   <script type="importmap">
     {
       "imports": {
         "vue": "https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.esm-browser.js",
-        "@docle/vue": "./vue-component.js",
-        "@docle/sdk": "https://cdn.jsdelivr.net/npm/@docle/sdk@latest/+esm"
+        "@doclehq/vue": "./vue-component.js",
+        "@doclehq/sdk": "https://cdn.jsdelivr.net/npm/@doclehq/sdk@latest/+esm"
       }
     }
   </script>
@@ -117,7 +117,7 @@
   <script type="module">
     import { createApp, ref } from 'vue';
 
-    // Simple mock of @docle/vue for demo purposes
+    // Simple mock of @doclehq/vue for demo purposes
     // In production, this would be the actual package
     const DoclePlayground = {
       template: `
@@ -205,7 +205,7 @@ for (let i = 0; i < 5; i++) {
       },
       template: `
         <div class="container">
-          <h1>@docle/vue Demo</h1>
+          <h1>@doclehq/vue Demo</h1>
           <p class="subtitle">Vue 3 components for embedded code execution</p>
 
           <div class="demo-section">

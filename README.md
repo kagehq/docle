@@ -68,11 +68,11 @@ curl -X POST https://api.docle.co/api/run \
 ### TypeScript SDK
 
 ```bash
-npm install @docle/sdk
+npm install @doclehq/sdk
 ```
 
 ```typescript
-import { runSandbox } from '@docle/sdk';
+import { runSandbox } from '@doclehq/sdk';
 
 const result = await runSandbox('print("Hello!")', { lang: 'python' });
 console.log(result.stdout);
@@ -81,11 +81,11 @@ console.log(result.stdout);
 ### React
 
 ```bash
-npm install @docle/react
+npm install @doclehq/react
 ```
 
 ```tsx
-import { DoclePlayground } from '@docle/react';
+import { DoclePlayground } from '@doclehq/react';
 
 <DoclePlayground
   lang="python"
@@ -97,12 +97,12 @@ import { DoclePlayground } from '@docle/react';
 ### Vue
 
 ```bash
-npm install @docle/vue
+npm install @doclehq/vue
 ```
 
 ```vue
 <script setup>
-import { DoclePlayground } from '@docle/vue';
+import { DoclePlayground } from '@doclehq/vue';
 </script>
 
 <template>

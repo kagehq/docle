@@ -1,15 +1,15 @@
-# @docle/react
+# @doclehq/react
 
 React components for [Docle](https://github.com/kagehq/docle) - embeddable code execution powered by Cloudflare.
 
 ## Installation
 
 ```bash
-npm install @docle/react
+npm install @doclehq/react
 # or
-yarn add @docle/react
+yarn add @doclehq/react
 # or
-pnpm add @docle/react
+pnpm add @doclehq/react
 ```
 
 ## Components
@@ -19,7 +19,7 @@ pnpm add @docle/react
 Embeddable code playground with iframe isolation.
 
 ```tsx
-import { DoclePlayground } from '@docle/react';
+import { DoclePlayground } from '@doclehq/react';
 
 function App() {
   return (
@@ -56,7 +56,7 @@ function App() {
 
 ```tsx
 import { useState } from 'react';
-import { DoclePlayground } from '@docle/react';
+import { DoclePlayground } from '@doclehq/react';
 
 function Tutorial() {
   const [step, setStep] = useState(0);
@@ -91,7 +91,7 @@ function Tutorial() {
 Headless hook for programmatic code execution (no UI).
 
 ```tsx
-import { useDocle } from '@docle/react';
+import { useDocle } from '@doclehq/react';
 
 function CustomEditor() {
   const { run, result, loading, error } = useDocle();
@@ -134,7 +134,7 @@ function CustomEditor() {
 #### Example: Code Validator
 
 ```tsx
-import { useDocle } from '@docle/react';
+import { useDocle } from '@doclehq/react';
 
 function CodeValidator({ code, tests }) {
   const { run, result, loading } = useDocle();

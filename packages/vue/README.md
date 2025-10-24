@@ -1,11 +1,11 @@
-# @docle/vue
+# @doclehq/vue
 
 Vue 3 components for embedding Docle sandboxed code execution in your Vue applications.
 
 ## Installation
 
 ```bash
-npm install @docle/vue
+npm install @doclehq/vue
 ```
 
 ## Components
@@ -16,7 +16,7 @@ A ready-to-use embedded playground component.
 
 ```vue
 <script setup>
-import { DoclePlayground } from '@docle/vue';
+import { DoclePlayground } from '@doclehq/vue';
 
 const handleReady = (data) => {
   console.log('Playground ready:', data);
@@ -65,7 +65,7 @@ const handleRun = (result) => {
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { DoclePlayground } from '@docle/vue';
+import { DoclePlayground } from '@doclehq/vue';
 
 const playgroundRef = ref(null);
 
@@ -94,7 +94,7 @@ Headless composable for programmatic code execution.
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { useDocle } from '@docle/vue';
+import { useDocle } from '@doclehq/vue';
 
 const { run, result, loading, error } = useDocle();
 const code = ref('print("Hello from Vue!")');
@@ -141,7 +141,7 @@ import type {
   DocleRunResult,
   DocleEmitEvents,
   UseDocleOptions
-} from '@docle/vue';
+} from '@doclehq/vue';
 ```
 
 ## Examples
