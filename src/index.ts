@@ -105,9 +105,17 @@ app.get("/collab/:sessionId/websocket", async (c) => {
     const stub = c.env.COLLAB_SESSION.get(id);
     
     // Create a new request with just /websocket path for the DO
+    // We need to preserve all headers, especially WebSocket upgrade headers
     const url = new URL(c.req.url);
     url.pathname = '/websocket';
-    const doRequest = new Request(url, c.req.raw);
+    
+    const doRequest = new Request(url.toString(), {
+      method: c.req.method,
+      headers: c.req.raw.headers,
+      body: c.req.raw.body,
+      // @ts-ignore - WebSocket property
+      duplex: 'half'
+    });
     
     // Forward the WebSocket upgrade request to the Durable Object
     return stub.fetch(doRequest);
@@ -131,7 +139,11 @@ app.get("/collab/:sessionId/state", async (c) => {
     // Create a new request with just /state path for the DO
     const url = new URL(c.req.url);
     url.pathname = '/state';
-    const doRequest = new Request(url, c.req.raw);
+    
+    const doRequest = new Request(url.toString(), {
+      method: c.req.method,
+      headers: c.req.raw.headers
+    });
     
     // Forward the state request to the Durable Object
     return stub.fetch(doRequest);
