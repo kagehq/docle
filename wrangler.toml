@@ -21,7 +21,7 @@ new_sqlite_classes = ["Sandbox"]
 [[containers]]
 class_name = "Sandbox"
 image = "./Dockerfile"
-name = "sandbox"
+name = "docle-sandbox"
 max_instances = 10
 
 [[durable_objects.bindings]]
