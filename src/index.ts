@@ -84,8 +84,8 @@ app.get("/api/run/:id", async (c) => {
   return c.json(JSON.parse(raw));
 });
 
-// Collaborative editing endpoints
-app.all("/collab/:sessionId/*", async (c) => {
+// Collaborative editing WebSocket endpoint
+app.get("/collab/:sessionId/websocket", async (c) => {
   const sessionId = c.req.param("sessionId");
   
   if (!c.env.COLLAB_SESSION) {
@@ -95,7 +95,22 @@ app.all("/collab/:sessionId/*", async (c) => {
   const id = c.env.COLLAB_SESSION.idFromName(sessionId);
   const stub = c.env.COLLAB_SESSION.get(id);
   
-  // Forward the request to the Durable Object
+  // Forward the WebSocket upgrade request to the Durable Object
+  return stub.fetch(c.req.raw);
+});
+
+// Collaborative editing state endpoint
+app.get("/collab/:sessionId/state", async (c) => {
+  const sessionId = c.req.param("sessionId");
+  
+  if (!c.env.COLLAB_SESSION) {
+    return c.json({ error: "Collaborative editing not available" }, 503);
+  }
+  
+  const id = c.env.COLLAB_SESSION.idFromName(sessionId);
+  const stub = c.env.COLLAB_SESSION.get(id);
+  
+  // Forward the state request to the Durable Object
   return stub.fetch(c.req.raw);
 });
 
