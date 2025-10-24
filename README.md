@@ -1,75 +1,67 @@
 # Docle
 
-Run untrusted code safely, anywhere. Secure code execution service built on Cloudflare Workers + Sandbox.
-Execute Python or Node.js code in isolated sandboxes with configurable policies for timeout, memory, and network access.
+**Run untrusted code safely.** Execute Python and Node.js code in secure sandboxes at the edge. No servers, no Docker, no complexity.
 
-## Why Docle?
+## Why?
 
-Every modern app runs code it didn’t write. AI-generated snippets, user automations, plugin systems, custom logic blocks. But running that code safely? It’s a nightmare.
+Modern apps need to run code they didn't write—AI-generated scripts, user automations, plugins, custom logic. But doing it safely is hard.
 
-Docle makes it instant. Add code execution to your app in 5 minutes. No servers, no docker, no complexity, no risk. Run your users’ code safely with one line.
+Docle makes it simple. Add a one-line script tag and you're done:
 
 ```html
-<!-- Literally one line -->
 <script src="https://api.docle.co/embed.js"></script>
 <div data-docle>print("Hello, World!")</div>
 ```
 
-**That's it.** Your users can now run Python and Node.js code safely in your app.
+That's it. Your users can now run Python and Node.js code safely in your app.
 
-**What makes it special:**
-- **Edge-native** - Runs on Cloudflare's global network (<50ms latency)
-- **Zero trust** - Isolated V8 sandboxes, no code ever touches your servers
-- **Drop-in UI** - Beautiful code editor with syntax highlighting included
-- **Framework agnostic** - Works with React, Vue, or vanilla JS
-- **Collaborative** - Built-in real-time multi-user editing
-- **Batteries included** - npm/pip packages, multi-file projects, history
+## What You Get
 
-**Use cases:** Educational platforms • AI agents • Code playgrounds • SaaS plugins • Live interviews
+- ⚡ **Fast** - Runs on Cloudflare's edge (<50ms latency)
+- 🔒 **Secure** - Isolated V8 sandboxes, no access to your infrastructure
+- 🎨 **Beautiful UI** - Code editor with syntax highlighting included
+- 📦 **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
+- 🌐 **Works everywhere** - React, Vue, vanilla JS, or pure REST API
 
+**Perfect for:** Educational platforms • AI agents • Code playgrounds • SaaS plugins • Live interviews
 
 ## Quick Start
 
-### For Users (Live Demo)
-Visit **https://app.docle.co** - Full playground with real code execution
+### Try it Now
 
-### For Developers (Local Setup)
+Visit [app.docle.co](https://app.docle.co) for a live playground with real code execution.
+
+### Install
+
+Choose your flavor:
+
 ```bash
-git clone https://github.com/kagehq/docle.git
-cd docle
+# TypeScript/JavaScript SDK
+npm install @doclehq/sdk
 
-# Install dependencies
-npm install
-cd playground && npm install && cd ..
+# React components
+npm install @doclehq/react
 
-# Start servers (API + Playground)
-./start.sh
+# Vue 3 components
+npm install @doclehq/vue
 ```
 
-Visit **http://localhost:3001** for playground
-API runs on **http://localhost:8787**
-
-**Note:** Cloudflare Sandbox containers only work in production. Local dev uses simulation mode.
+Or use the CDN for zero-install embedding.
 
 ## Usage
 
-### REST API
+### 1. REST API
 
 ```bash
 curl -X POST https://api.docle.co/api/run \
   -H "Content-Type: application/json" \
   -d '{
     "code": "print(\"Hello, Docle!\")",
-    "lang": "python",
-    "policy": {"timeoutMs": 5000, "memoryMB": 256, "allowNet": false}
+    "lang": "python"
   }'
 ```
 
-### TypeScript SDK
-
-```bash
-npm install @doclehq/sdk
-```
+### 2. TypeScript SDK
 
 ```typescript
 import { runSandbox } from '@doclehq/sdk';
@@ -78,11 +70,7 @@ const result = await runSandbox('print("Hello!")', { lang: 'python' });
 console.log(result.stdout);
 ```
 
-### React
-
-```bash
-npm install @doclehq/react
-```
+### 3. React
 
 ```tsx
 import { DoclePlayground } from '@doclehq/react';
@@ -94,11 +82,7 @@ import { DoclePlayground } from '@doclehq/react';
 />
 ```
 
-### Vue
-
-```bash
-npm install @doclehq/vue
-```
+### 4. Vue 3
 
 ```vue
 <script setup>
@@ -110,7 +94,7 @@ import { DoclePlayground } from '@doclehq/vue';
 </template>
 ```
 
-### CDN Embed
+### 5. CDN Embed
 
 ```html
 <script src="https://api.docle.co/embed.js"></script>
@@ -119,66 +103,74 @@ print("Hello, Docle!")
 </div>
 ```
 
-## Playgrounds
+## Key Features
 
-- **`/playground`** - Simple editor with syntax highlighting
-- **`/playground/advanced`** - Multi-file editor with package installation
-- **`/playground/collab`** - Real-time collaborative editing
-- **`/dashboard`** - Execution history and metrics
+- ✅ **Python 3** and **Node.js** support
+- ✅ Install **npm/pip packages** before execution
+- ✅ **Multi-file projects** with custom entry points
+- ✅ **Real-time collaboration** with WebSocket-powered editing
+- ✅ **Execution history** stored for 7 days
+- ✅ **Configurable policies** (timeout, memory, network access)
+- ✅ **Beautiful playground** with CodeMirror 6 editor
 
-## Features
-
-- **Secure Isolation** - Cloudflare Sandbox with V8 isolates
-- **REST API** - Simple HTTP endpoints
-- **TypeScript SDK** - Type-safe client library
-- **Embeddable** - iframe & CDN script for any website
-- **React & Vue** - Native framework components
-- **Multi-File Projects** - Execute complex projects, not just single scripts
-- **Package Installation** - npm/pip support
-- **Syntax Highlighting** - CodeMirror 6 editor
-- **Collaborative Editing** - Real-time multi-user WebSocket sessions
-- **Global Edge Network** - Fast execution worldwide
-- **Package Installation** - Install npm/pip packages before execution
-- **Execution History** - Track and replay previous runs (local + server)
-
-## Production Deployment
-
-### Requirements
-
-- [Cloudflare account](https://dash.cloudflare.com/sign-up)
-- Workers Paid plan (for Sandbox & Durable Objects)
-
-### Deploy
+## Local Development
 
 ```bash
-# Create KV namespaces
+git clone https://github.com/kagehq/docle.git
+cd docle
+npm install
+cd playground && npm install && cd ..
+./start.sh
+```
+
+Visit:
+- **Playground:** http://localhost:3001
+- **API:** http://localhost:8787
+
+**Note:** Cloudflare Sandbox only works in production. Local dev uses simulation mode.
+
+## Deploy to Production
+
+**Requirements:**
+- Cloudflare account
+- Workers Paid plan ($5/month) for Sandbox access
+
+**Steps:**
+
+```bash
+# 1. Create KV namespace
 npx wrangler kv namespace create RUNS
-npx wrangler kv namespace create RUNS --env=preview
 
-# Update wrangler.toml with generated IDs
+# 2. Update wrangler.toml with the generated ID
 
-# Deploy
+# 3. Deploy
 npm run deploy
 ```
 
-Your worker will be live at `https://docle.your-subdomain.workers.dev`
+Your API will be live at `https://docle.YOUR-SUBDOMAIN.workers.dev`
 
 ## Documentation
 
-- **[FEATURES.md](FEATURES.md)** - Complete feature guide
-- **[packages/react/README.md](packages/react/README.md)** - React components
-- **[packages/vue/README.md](packages/vue/README.md)** - Vue components
-- **[sdk/README.md](sdk/README.md)** - TypeScript SDK
-- **[examples/](examples/)** - Integration examples
+- 📘 **[DETAILED.md](DETAILED.md)** - Complete documentation (1,400+ lines)
+- ⚛️ **[React Docs](packages/react/README.md)** - React components & hooks
+- 💚 **[Vue Docs](packages/vue/README.md)** - Vue 3 components & composables
+- 📦 **[SDK Docs](sdk/README.md)** - TypeScript SDK reference
+- 💡 **[Examples](examples/)** - Integration examples
 
-## Development
+## Examples in Action
 
-```bash
-npm run dev        # Start local server
-npm run deploy     # Deploy to Cloudflare
-npm run typecheck  # Type checking
-npm run format     # Format code
-```
+Check out the [examples/](examples/) directory for:
+- CDN embed demo
+- React integration
+- Vue integration
+- iframe embedding
+
+## Contributing
+
+We welcome contributions! Feel free to:
+- Open issues for bugs or feature requests
+- Submit PRs for improvements
+- Share your use cases
 
 ## License
 
@@ -186,4 +178,6 @@ FSL-1.1-MIT - See [LICENSE](./LICENSE) for details.
 
 ---
 
-Built with ❤️ using [Cloudflare Workers](https://workers.cloudflare.com), [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/), and [Hono](https://hono.dev)
+**Built with ❤️ using [Cloudflare Workers](https://workers.cloudflare.com), [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/), and [Hono](https://hono.dev)**
+
+**Questions?** Open an issue or check out the [detailed documentation](DETAILED.md).
