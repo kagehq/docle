@@ -28,8 +28,8 @@
     "vue3",
     "cloudflare"
   ],
-  "author": "Docle Team",
-  "license": "MIT",
+  "author": "Treadie, Inc",
+  "license": "FSL-1.1-MIT",
   "peerDependencies": {
     "vue": "^3.3.0"
   },

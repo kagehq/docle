@@ -4,9 +4,9 @@
 
 ## Why?
 
-Modern apps need to run code they didn't write—AI-generated scripts, user automations, plugins, custom logic. But doing it safely is hard.
+Modern apps need to run code they didn't write like AI-generated scripts, user automations, plugins, custom logic. But doing it safely is hard.
 
-Docle makes it simple. Add a one-line script tag and you're done:
+Docle makes it simple. Run your users’ code safely with one line:
 
 ```html
 <script src="https://api.docle.co/embed.js"></script>
@@ -17,11 +17,11 @@ That's it. Your users can now run Python and Node.js code safely in your app.
 
 ## What You Get
 
-- ⚡ **Fast** - Runs on Cloudflare's edge (<50ms latency)
-- 🔒 **Secure** - Isolated V8 sandboxes, no access to your infrastructure
-- 🎨 **Beautiful UI** - Code editor with syntax highlighting included
-- 📦 **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
-- 🌐 **Works everywhere** - React, Vue, vanilla JS, or pure REST API
+- **Fast** - Runs on Cloudflare's edge (<50ms latency)
+- **Secure** - Isolated V8 sandboxes, no access to your infrastructure
+- **Beautiful UI** - Code editor with syntax highlighting included
+- **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
+- **Works everywhere** - React, Vue, vanilla JS, or pure REST API
 
 **Perfect for:** Educational platforms • AI agents • Code playgrounds • SaaS plugins • Live interviews
 

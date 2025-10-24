@@ -232,14 +232,4 @@ See the [examples directory](../../examples/react/) for complete examples:
 
 ## License
 
-MIT
-
----
-
-## Links
-
-- [Docle Documentation](../../README.md)
-- [API Reference](../../README.md#api-reference)
-- [Examples](../../examples/)
-- [GitHub](https://github.com/kagehq/docle)
-
+FSL-1.1-MIT

@@ -1,4 +1,4 @@
-# Docle Playground (Nuxt 3 + Tailwind)
+# Docle Playground
 
 Modern playground interface for Docle built with Nuxt 3 and Tailwind CSS.
 

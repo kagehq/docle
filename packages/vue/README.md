@@ -195,5 +195,5 @@ import type {
 
 ## License
 
-MIT
+FSL-1.1-MIT
 

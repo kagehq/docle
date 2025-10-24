@@ -27,11 +27,34 @@ app.get("/", (c) => {
     description: "Secure code execution API powered by Cloudflare Sandbox",
     endpoints: {
       "POST /api/run": "Execute code",
-      "GET /api/run/:id": "Get execution result by ID"
+      "GET /api/run/:id": "Get execution result by ID",
+      "GET /embed.js": "CDN embed script"
     },
     playground: "https://app.docle.co",
     docs: "https://github.com/kagehq/docle"
   });
+});
+
+// Serve CDN embed script
+app.get("/embed.js", async (c) => {
+  try {
+    // In production, serve the built embed.js from KV or inline
+    // For now, redirect to unpkg or serve inline
+    const embedScript = c.env.EMBED_JS || await c.env.RUNS.get("embed.js");
+    
+    if (embedScript) {
+      return c.body(embedScript, 200, {
+        "Content-Type": "application/javascript",
+        "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+        "Access-Control-Allow-Origin": "*"
+      });
+    }
+    
+    // Fallback: return a simple redirect or error
+    return c.text("Embed script not found. Build and upload embed.js first.", 404);
+  } catch (e: any) {
+    return c.text(`Error serving embed script: ${e.message}`, 500);
+  }
 });
 
 app.post("/api/run", async (c) => {

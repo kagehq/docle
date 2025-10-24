@@ -1,0 +1,17 @@
+{
+  "name": "@doclehq/embed",
+  "version": "0.1.0",
+  "description": "CDN embed script for Docle",
+  "type": "module",
+  "main": "./dist/embed.js",
+  "scripts": {
+    "build": "esbuild embed.ts --bundle --minify --format=iife --outfile=dist/embed.js --global-name=Docle"
+  },
+  "keywords": ["docle", "embed", "cdn"],
+  "license": "FSL-1.1-MIT",
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "typescript": "^5.6.3"
+  }
+}
+
