@@ -11,6 +11,10 @@ pkill -f "wrangler dev" 2>/dev/null
 pkill -f "nuxt dev" 2>/dev/null
 sleep 1
 
+# Clean up local Durable Objects storage to avoid migration issues
+echo "🧹 Cleaning local storage..."
+rm -rf .wrangler/state 2>/dev/null
+
 # Start Worker API in background
 echo "📡 Starting API (Worker) on port 8787..."
 npx wrangler dev --port 8787 --local-protocol http > /tmp/docle-api.log 2>&1 &
