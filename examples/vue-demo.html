@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@docle/vue Demo</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.esm-browser.js",
+        "@docle/vue": "./vue-component.js",
+        "@docle/sdk": "https://cdn.jsdelivr.net/npm/@docle/sdk@latest/+esm"
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b0d10;
+      color: #e6eef8;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #9aa8b4;
+      margin-bottom: 32px;
+    }
+    .demo-section {
+      background: #11161b;
+      border: 1px solid #1b232b;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .demo-section h2 {
+      margin-top: 0;
+      font-size: 20px;
+      color: #8aa2ff;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #8aa2ff;
+      color: #051030;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .output {
+      background: #0a0e12;
+      border: 1px solid #1b232b;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      max-height: 300px;
+      overflow: auto;
+    }
+    pre {
+      margin: 0;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .code-input {
+      width: 100%;
+      background: #0a0e12;
+      color: #e6eef8;
+      border: 1px solid #1b232b;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .status.loading {
+      background: rgba(138, 162, 255, 0.1);
+      border: 1px solid #8aa2ff;
+    }
+    .status.success {
+      background: rgba(81, 207, 102, 0.1);
+      border: 1px solid #51cf66;
+    }
+    .status.error {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module">
+    import { createApp, ref } from 'vue';
+
+    // Simple mock of @docle/vue for demo purposes
+    // In production, this would be the actual package
+    const DoclePlayground = {
+      template: `
+        <iframe
+          :src="iframeSrc"
+          style="width: 100%; height: 400px; border: none; border-radius: 8px;"
+          title="Docle Playground"
+        />
+      `,
+      props: {
+        lang: { type: String, default: 'python' },
+        code: { type: String, default: 'print("Hello, Docle!")' },
+        theme: { type: String, default: 'dark' },
+        endpoint: { type: String, default: '' }
+      },
+      computed: {
+        iframeSrc() {
+          const baseUrl = this.endpoint || window.location.origin;
+          const params = new URLSearchParams({
+            lang: this.lang,
+            theme: this.theme,
+            code: encodeURIComponent(this.code),
+            showOutput: 'true'
+          });
+          return `${baseUrl}/embed?${params}`;
+        }
+      }
+    };
+
+    const app = createApp({
+      components: {
+        DoclePlayground
+      },
+      setup() {
+        const pythonCode = ref(`print("Hello from Vue!")
+for i in range(5):
+    print(f"Count: {i}")`);
+
+        const nodeCode = ref(`console.log("Hello, Node.js!");
+for (let i = 0; i < 5; i++) {
+  console.log(\`Count: \${i}\`);
+}`);
+
+        const customCode = ref('print("Edit me and run!")');
+        const result = ref(null);
+        const loading = ref(false);
+        const error = ref(null);
+
+        const runCustomCode = async () => {
+          loading.value = true;
+          error.value = null;
+          result.value = null;
+
+          try {
+            const res = await fetch('/api/run', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                code: customCode.value,
+                lang: 'python',
+                policy: {
+                  timeoutMs: 5000,
+                  memoryMB: 256,
+                  allowNet: false
+                }
+              })
+            });
+            result.value = await res.json();
+          } catch (e) {
+            error.value = e;
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        return {
+          pythonCode,
+          nodeCode,
+          customCode,
+          result,
+          loading,
+          error,
+          runCustomCode
+        };
+      },
+      template: `
+        <div class="container">
+          <h1>@docle/vue Demo</h1>
+          <p class="subtitle">Vue 3 components for embedded code execution</p>
+
+          <div class="demo-section">
+            <h2>1. Basic Python Playground</h2>
+            <DoclePlayground
+              lang="python"
+              :code="pythonCode"
+              theme="dark"
+            />
+          </div>
+
+          <div class="demo-section">
+            <h2>2. Node.js Playground</h2>
+            <DoclePlayground
+              lang="node"
+              :code="nodeCode"
+              theme="dark"
+            />
+          </div>
+
+          <div class="demo-section">
+            <h2>3. Headless Hook with Custom UI</h2>
+            <p style="color: #9aa8b4; margin-bottom: 12px;">
+              Using <code>useDocle()</code> composable for programmatic execution
+            </p>
+            
+            <textarea
+              v-model="customCode"
+              class="code-input"
+              placeholder="Write your Python code here..."
+            />
+            
+            <div class="controls">
+              <button @click="runCustomCode" :disabled="loading">
+                {{ loading ? 'Running...' : '▶ Run Code' }}
+              </button>
+            </div>
+
+            <div v-if="loading" class="status loading">
+              ⏳ Executing code...
+            </div>
+
+            <div v-if="result && !loading" class="status success">
+              ✓ Execution completed in {{ result.usage?.durationMs || 0 }}ms
+            </div>
+
+            <div v-if="error" class="status error">
+              ✗ Error: {{ error.message }}
+            </div>
+
+            <div v-if="result" class="output">
+              <pre>{{ JSON.stringify(result, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <div class="demo-section">
+            <h2>4. Light Theme</h2>
+            <DoclePlayground
+              lang="python"
+              code="print('Light theme example')"
+              theme="light"
+            />
+          </div>
+
+          <div style="text-align: center; margin-top: 40px; color: #9aa8b4; font-size: 14px;">
+            <p>Powered by <strong style="color: #8aa2ff;">Docle</strong></p>
+            <p>
+              <a href="https://github.com/yourusername/docle" style="color: #8aa2ff;">Documentation</a> •
+              <a href="/playground" style="color: #8aa2ff;">Try Playground</a>
+            </p>
+          </div>
+        </div>
+      `
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
+

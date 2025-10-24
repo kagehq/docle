@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docle CDN Demo - Zero Config Embedding</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #0a0e12;
+      color: #e6eef8;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #9aa8b4;
+      margin-bottom: 40px;
+    }
+    .demo {
+      margin-bottom: 60px;
+    }
+    h2 {
+      color: #8aa2ff;
+      margin-bottom: 20px;
+    }
+    pre {
+      background: #11161b;
+      border: 1px solid #1b232b;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    code {
+      color: #8aa2ff;
+    }
+    .highlight {
+      background: #1b232b;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    [data-docle] {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Docle CDN Demo</h1>
+  <p class="subtitle">Zero-config code playground embedding with one script tag</p>
+
+  <!-- Example 1: Inline code -->
+  <div class="demo">
+    <h2>1. Inline Code (Data Attribute)</h2>
+    <p>Just add <span class="highlight">data-docle</span> to any element:</p>
+    
+    <div data-docle data-lang="python">
+print("Hello from Docle!")
+print("This is inline code")
+for i in range(3):
+    print(f"Count: {i}")
+    </div>
+
+    <pre><code>&lt;script src="https://docle.workers.dev/embed.js"&gt;&lt;/script&gt;
+
+&lt;div data-docle data-lang="python"&gt;
+print("Hello from Docle!")
+&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Example 2: Node.js -->
+  <div class="demo">
+    <h2>2. Node.js Example</h2>
+    
+    <div data-docle data-lang="node">
+console.log("Running Node.js!");
+console.log("Math.PI =", Math.PI);
+console.log("Current time:", new Date().toISOString());
+    </div>
+
+    <pre><code>&lt;div data-docle data-lang="node"&gt;
+console.log("Hello, Node!");
+&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Example 3: Light theme -->
+  <div class="demo">
+    <h2>3. Light Theme</h2>
+    
+    <div data-docle data-lang="python" data-theme="light">
+def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("World"))
+    </div>
+
+    <pre><code>&lt;div data-docle data-lang="python" data-theme="light"&gt;
+...
+&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Example 4: Custom height -->
+  <div class="demo">
+    <h2>4. Custom Height</h2>
+    
+    <div data-docle data-lang="python" data-height="300px">
+# Shorter playground
+print("Compact view")
+    </div>
+
+    <pre><code>&lt;div data-docle data-height="300px"&gt;
+print("Compact!")
+&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Example 5: Pre-filled code via attribute -->
+  <div class="demo">
+    <h2>5. Code via Attribute</h2>
+    <p>Use <span class="highlight">data-code</span> instead of innerHTML:</p>
+    
+    <div data-docle 
+         data-lang="python" 
+         data-code='import random&#10;print("Random number:", random.randint(1, 100))'>
+    </div>
+
+    <pre><code>&lt;div data-docle 
+     data-lang="python" 
+     data-code="import random\nprint(random.randint(1, 100))"&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Example 6: Programmatic Control -->
+  <div class="demo">
+    <h2>6. Programmatic Control</h2>
+    <p>Use the JavaScript API for advanced control:</p>
+    
+    <div id="controlled" data-docle data-lang="python">
+x = 42
+print(f"The answer is {x}")
+    </div>
+
+    <button onclick="runCode()" style="background: #8aa2ff; color: #051030; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer; margin-right: 10px;">▶ Run</button>
+    <button onclick="updateCode()" style="background: #51cf66; color: #051030; border: none; border-radius: 6px; padding: 10px 20px; cursor: pointer;">✏️ Update Code</button>
+
+    <pre><code>// Access the embed instance
+const element = document.getElementById('controlled');
+const embed = new DocleEmbed(element);
+
+// Run code
+embed.run();
+
+// Update code
+embed.setCode('print("New code!")');</code></pre>
+  </div>
+
+  <footer style="margin-top: 80px; padding-top: 40px; border-top: 1px solid #1b232b; color: #9aa8b4; text-align: center;">
+    <p>
+      <strong>That's it!</strong> One script tag, zero configuration.<br>
+      Powered by <a href="https://developers.cloudflare.com/sandbox/" style="color: #8aa2ff;">Cloudflare Sandbox</a>
+    </p>
+  </footer>
+
+  <!-- Load Docle CDN -->
+  <script src="http://localhost:8787/embed.js"></script>
+
+  <script>
+    // Programmatic control example
+    function runCode() {
+      const element = document.getElementById('controlled');
+      // Find the iframe inside
+      const iframe = element.querySelector('iframe');
+      iframe.contentWindow.postMessage({ type: 'docle-run' }, '*');
+    }
+
+    function updateCode() {
+      const element = document.getElementById('controlled');
+      const iframe = element.querySelector('iframe');
+      iframe.contentWindow.postMessage({ 
+        type: 'docle-set-code', 
+        code: `import random
+lucky_number = random.randint(1, 100)
+print(f"Your lucky number is {lucky_number}!")` 
+      }, '*');
+    }
+
+    // Listen to all results
+    window.addEventListener('message', (e) => {
+      if (e.data.type === 'docle-result') {
+        console.log('Code executed:', e.data.data);
+      }
+    });
+  </script>
+</body>
+</html>
+

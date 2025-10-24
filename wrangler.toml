@@ -1,0 +1,30 @@
+name = "docle"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV for run logs & index (replace IDs after `wrangler kv namespace create`)
+[[kv_namespaces]]
+binding = "RUNS"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+preview_id = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+
+# Sandbox for secure code execution (requires Workers Paid plan)
+# Note: In production, you'll need to configure this properly
+# For now, we'll use the simulation fallback in local mode
+# [[workflows]]
+# binding = "SANDBOX"
+# name = "sandbox"
+
+[vars]
+APP_NAME = "Docle"
+
+# Durable Objects for collaborative editing
+[[durable_objects.bindings]]
+name = "COLLAB_SESSION"
+class_name = "CollabSession"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["CollabSession"]
+

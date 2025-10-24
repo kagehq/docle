@@ -1,0 +1,47 @@
+{
+  "name": "@docle/vue",
+  "version": "0.1.0",
+  "description": "Vue 3 components for Docle embedded sandbox",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "vue-tsc && vite build",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "keywords": [
+    "docle",
+    "sandbox",
+    "code-execution",
+    "vue",
+    "vue3",
+    "cloudflare"
+  ],
+  "author": "Docle Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.0.0",
+    "vue": "^3.4.0",
+    "vue-tsc": "^2.0.0"
+  },
+  "dependencies": {
+    "@docle/sdk": "*"
+  }
+}
+
