@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@cloudflare/sandbox": "^0.4.7",
-    "hono": "^4.5.11"
+    "hono": "^4.5.11",
+    "stripe": "^17.5.0"
   }
 }

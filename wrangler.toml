@@ -9,8 +9,36 @@ binding = "RUNS"
 id = "809528141f1a4f7b89c7d84499ee8c77"
 preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 
+# D1 Database for projects, API keys, usage, and billing
+# Run: npx wrangler d1 create docle-db
+# Then replace database_id below with your actual database ID
+[[d1_databases]]
+binding = "DB"
+database_name = "docle-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE" # Replace with actual ID from `wrangler d1 create`
+
 [vars]
 APP_NAME = "Docle"
+APP_URL = "https://docle.co" # Change to your domain
+ENVIRONMENT = "production" # or "development"
+
+# Stripe Configuration
+# Get these from: https://dashboard.stripe.com/apikeys
+STRIPE_SECRET_KEY = "sk_test_..." # Replace with your Stripe secret key
+STRIPE_WEBHOOK_SECRET = "whsec_..." # Replace with your webhook signing secret
+STRIPE_PRICE_ID = "price_..." # Replace with your metered price ID
+
+# Pricing configuration (optional, defaults shown)
+STRIPE_PRICE_PER_RUN = "0.001" # $0.001 per run
+STRIPE_PRICE_PER_CPU_MS = "0.00001" # $0.00001 per CPU millisecond
+
+# Free tier limits
+FREE_TIER_RUNS_LIMIT = "100" # 100 runs per month for free tier
+
+# Email configuration (for magic links)
+# Using Resend (https://resend.com) - optional
+# RESEND_API_KEY = "re_..."
+# EMAIL_FROM = "noreply@docle.co"
 
 # Enable Cloudflare Sandbox (Production Only - Containers don't work in local dev)
 # [[migrations]]
