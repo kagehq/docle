@@ -23,7 +23,7 @@ import type { UseDocleOptions, UseDocleReturn, DocleResult, DocleRunOptions } fr
  * }
  * ```
  */
-export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
+export function useDocle({ endpoint, apiKey, userContext }: UseDocleOptions = {}): UseDocleReturn {
   const [result, setResult] = useState<DocleResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -36,7 +36,7 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
     setError(null);
 
     try {
-      const endpoint = runOptions.endpoint || options.endpoint || 
+      const effectiveEndpoint = runOptions.endpoint || endpoint || 
         (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 
         'https://api.docle.co';
 
@@ -46,19 +46,27 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
       };
 
       // Add API key if provided (priority: runOptions > hook options)
-      const apiKey = runOptions.apiKey || options.apiKey;
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      const effectiveApiKey = runOptions.apiKey || apiKey;
+      if (effectiveApiKey) {
+        headers['Authorization'] = `Bearer ${effectiveApiKey}`;
       }
 
-      const response = await fetch(`${endpoint}/api/run`, {
+      const body: Record<string, unknown> = {
+        code,
+        lang: runOptions.lang,
+        policy: runOptions.policy || {}
+      };
+
+      // Include userContext if provided (from hook options or run options)
+      const contextToUse = runOptions.userContext || userContext;
+      if (contextToUse) {
+        body.userContext = contextToUse;
+      }
+
+      const response = await fetch(`${effectiveEndpoint}/api/run`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          code,
-          lang: runOptions.lang,
-          policy: runOptions.policy || {}
-        })
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
@@ -76,7 +84,7 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
     } finally {
       setLoading(false);
     }
-  }, [options.endpoint, options.apiKey]);
+  }, [endpoint, apiKey, userContext]);
 
   const reset = useCallback(() => {
     setResult(null);

@@ -19,19 +19,19 @@ export class UpstashRateLimiter implements RateLimiter {
     try {
       // Add current request timestamp
       await this.redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
-      
+
       // Remove old entries outside the window
       await this.redis.zremrangebyscore(key, 0, windowStart);
-      
+
       // Count requests in current window
       const count = await this.redis.zcard(key);
-      
+
       // Set expiry
       await this.redis.expire(key, Math.ceil(windowMs / 1000));
-      
+
       const remaining = Math.max(0, limit - count);
       const success = count <= limit;
-      
+
       return {
         success,
         remaining,
@@ -58,28 +58,28 @@ export class UpstashRateLimiter implements RateLimiter {
 
 /**
  * Create an Upstash rate limiter
- * 
+ *
  * Perfect for edge/serverless environments
- * 
+ *
  * @example
  * ```typescript
  * import { Redis } from '@upstash/redis';
  * import { createUpstashRateLimiter } from '@doclehq/rate-limit';
- * 
+ *
  * const redis = new Redis({
  *   url: process.env.UPSTASH_REDIS_REST_URL!,
  *   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
  * });
- * 
+ *
  * const limiter = createUpstashRateLimiter(redis);
- * 
+ *
  * // Check rate limit
  * const result = await limiter.check({
  *   userId: 'user_123',
  *   limit: 100,
  *   windowMs: 60000
  * });
- * 
+ *
  * if (!result.success) {
  *   throw new Error('Rate limit exceeded');
  * }

@@ -17,7 +17,7 @@ import type { RateLimiter, RateLimitConfig, TieredLimits } from './types';
 
 /**
  * Create a tiered rate limiter that adjusts limits based on user tier
- * 
+ *
  * @example
  * ```typescript
  * const limiter = createTieredRateLimiter(baseL imiter, {
@@ -25,7 +25,7 @@ import type { RateLimiter, RateLimitConfig, TieredLimits } from './types';
  *   pro: { requests: 1000, windowMs: 60000 },
  *   enterprise: { requests: 10000, windowMs: 60000 }
  * });
- * 
+ *
  * const result = await limiter.check({
  *   userId: 'user_123',
  *   tier: 'pro'
@@ -40,7 +40,7 @@ export function createTieredRateLimiter(
     async check(config: RateLimitConfig & { tier?: string }) {
       const tier = config.tier || 'free';
       const limits = tiers[tier] || tiers.free || { requests: 100, windowMs: 60000 };
-      
+
       return baseLimiter.check({
         ...config,
         limit: limits.requests,
@@ -56,7 +56,7 @@ export function createTieredRateLimiter(
 /**
  * Create rate limit headers for HTTP responses
  */
-export function createRateLimitHeaders(result: RateLimitResult): Record<string, string> {
+export function createRateLimitHeaders(result: import('./types').RateLimitResult): Record<string, string> {
   return {
     'X-RateLimit-Limit': result.limit.toString(),
     'X-RateLimit-Remaining': result.remaining.toString(),

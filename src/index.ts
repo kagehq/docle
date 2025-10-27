@@ -452,7 +452,7 @@ app.post("/api/run", async (c) => {
       return c.json({ error: "Invalid payload", issues: parsed.error.flatten() }, 400);
     }
 
-    const { code, files, entrypoint, packages, lang, policy: raw } = parsed.data;
+    const { code, files, entrypoint, packages, lang, policy: raw, userContext } = parsed.data;
     const policy = {
       timeoutMs: raw?.timeoutMs ?? 3000,
     };
@@ -532,11 +532,15 @@ app.post("/api/run", async (c) => {
     // Save run result
     await saveRun(c.env, result, id);
 
-    // Track usage with detailed info
+    // Track usage with detailed info (including userContext if provided)
     const status = exec.exitCode === 0 ? 'success' : 'error';
     const executionTimeMs = exec.usage?.cpuMs || 0;
 
-    await trackUsage(c.env, project.id, null, lang, code, status, exec.exitCode, executionTimeMs);
+    // If userContext is provided, track per-user usage
+    const userId = userContext?.id || null;
+    const userEmail = userContext?.email || null;
+    
+    await trackUsage(c.env, project.id, userId, lang, code, status, exec.exitCode, executionTimeMs, userEmail);
 
     return c.json(result);
   } catch (e: any) {

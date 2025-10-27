@@ -59,7 +59,7 @@ export class MemoryRateLimiter implements RateLimiter {
     const maxAge = 3600000; // 1 hour
 
     for (const [userId, entry] of this.limits.entries()) {
-      if (entry.timestamps.length === 0 || 
+      if (entry.timestamps.length === 0 ||
           Math.max(...entry.timestamps) < now - maxAge) {
         this.limits.delete(userId);
       }
@@ -79,30 +79,30 @@ export class MemoryRateLimiter implements RateLimiter {
 
 /**
  * Create an in-memory rate limiter
- * 
- * **Warning:** For development/testing only. 
+ *
+ * **Warning:** For development/testing only.
  * Data is lost on process restart and not shared across instances.
- * 
+ *
  * @example
  * ```typescript
  * import { createMemoryRateLimiter } from '@doclehq/rate-limit';
- * 
+ *
  * const limiter = createMemoryRateLimiter();
- * 
+ *
  * // Check rate limit
  * const result = await limiter.check({
  *   userId: 'user_123',
  *   limit: 100,
  *   windowMs: 60000
  * });
- * 
+ *
  * if (!result.success) {
  *   throw new Error('Rate limit exceeded');
  * }
  * ```
  */
-export function createMemoryRateLimiter(options?: { 
-  cleanupIntervalMs?: number 
+export function createMemoryRateLimiter(options?: {
+  cleanupIntervalMs?: number
 }): RateLimiter {
   return new MemoryRateLimiter(options);
 }

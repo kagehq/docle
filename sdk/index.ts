@@ -1,9 +1,19 @@
 export type Policy = { timeoutMs?: number };
-export type RunOptions = {
-  lang: "python" | "node";
-  policy?: Policy;
+
+export type UserContext = {
+  id: string;
+  email?: string;
+  name?: string;
+  tier?: 'free' | 'pro' | 'enterprise';
+  metadata?: Record<string, unknown>;
+};
+
+export type RunOptions = { 
+  lang: "python" | "node"; 
+  policy?: Policy; 
   endpoint?: string;
-  apiKey?: string; // NEW: Optional API key for authenticated access
+  apiKey?: string; // Optional API key for authenticated access
+  userContext?: UserContext; // Optional user context for per-user tracking
 };
 export type RunResponse = {
   id: string; ok: boolean; exitCode: number; stdout: string; stderr: string;
@@ -25,10 +35,17 @@ export async function runSandbox(code: string, opts: RunOptions): Promise<RunRes
     headers["authorization"] = `Bearer ${opts.apiKey}`;
   }
 
+  const body: Record<string, unknown> = {
+    code,
+    lang: opts.lang,
+    policy: opts.policy ?? {}
+  };
+  if (opts.userContext) body.userContext = opts.userContext;
+
   const res = await fetch(endpoint, {
     method: "POST",
     headers,
-    body: JSON.stringify({ code, lang: opts.lang, policy: opts.policy ?? {} })
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {

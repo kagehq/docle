@@ -5,11 +5,20 @@ export interface DoclePolicy {
   timeoutMs?: number;
 }
 
+export interface UserContext {
+  id: string;
+  email?: string;
+  name?: string;
+  tier?: 'free' | 'pro' | 'enterprise';
+  metadata?: Record<string, unknown>;
+}
+
 export interface DocleRunOptions {
   lang: Lang;
   policy?: DoclePolicy;
   endpoint?: string;
-  apiKey?: string; // NEW: Optional API key for authenticated access
+  apiKey?: string; // Optional API key for authenticated access
+  userContext?: UserContext; // Optional user context for per-user tracking
 }
 
 export interface DocleResult {
@@ -64,8 +73,10 @@ export interface DoclePlaygroundProps {
 export interface UseDocleOptions {
   /** API endpoint override */
   endpoint?: string;
-  /** API key for authenticated access (NEW) */
+  /** API key for authenticated access */
   apiKey?: string;
+  /** User context for per-user tracking */
+  userContext?: UserContext;
 }
 
 export interface UseDocleReturn {

@@ -19,19 +19,19 @@ export class RedisRateLimiter implements RateLimiter {
     try {
       // Add current request timestamp
       await this.redis.zadd(key, now, `${now}-${Math.random()}`);
-      
+
       // Remove old entries outside the window
       await this.redis.zremrangebyscore(key, 0, windowStart);
-      
+
       // Count requests in current window
       const count = await this.redis.zcard(key);
-      
+
       // Set expiry
       await this.redis.expire(key, Math.ceil(windowMs / 1000));
-      
+
       const remaining = Math.max(0, limit - count);
       const success = count <= limit;
-      
+
       return {
         success,
         remaining,
@@ -58,22 +58,22 @@ export class RedisRateLimiter implements RateLimiter {
 
 /**
  * Create a Redis rate limiter
- * 
+ *
  * @example
  * ```typescript
  * import Redis from 'ioredis';
  * import { createRedisRateLimiter } from '@doclehq/rate-limit';
- * 
+ *
  * const redis = new Redis(process.env.REDIS_URL);
  * const limiter = createRedisRateLimiter(redis);
- * 
+ *
  * // Check rate limit
  * const result = await limiter.check({
  *   userId: 'user_123',
  *   limit: 100,
  *   windowMs: 60000
  * });
- * 
+ *
  * if (!result.success) {
  *   throw new Error('Rate limit exceeded');
  * }
