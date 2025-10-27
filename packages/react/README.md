@@ -45,7 +45,8 @@ function App() {
 | `autorun` | `boolean` | `false` | Auto-run on mount |
 | `height` | `string` \| `number` | `'400px'` | Component height |
 | `width` | `string` \| `number` | `'100%'` | Component width |
-| `endpoint` | `string` | `undefined` | Custom API endpoint |
+| `endpoint` | `string` | `'https://api.docle.co'` | Custom API endpoint (use your proxy) |
+| `apiKey` | `string` | `undefined` | ⚠️ **Deprecated** - Use server proxy instead |
 | `onReady` | `(data) => void` | `undefined` | Callback when ready |
 | `onRun` | `(result) => void` | `undefined` | Callback after execution |
 | `onError` | `(error) => void` | `undefined` | Callback on error |
@@ -170,6 +171,8 @@ interface DocleResult {
     durationMs?: number;
   };
   createdAt: string;
+  demo_mode?: boolean;          // Indicates if running in demo/public mode
+  upgrade_message?: string;      // Message about rate limits or upgrading
 }
 
 interface DocleRunOptions {
@@ -179,7 +182,8 @@ interface DocleRunOptions {
     memoryMB?: number;
     allowNet?: boolean;
   };
-  endpoint?: string;
+  endpoint?: string;             // Your server proxy endpoint
+  apiKey?: string;               // ⚠️ Deprecated - Use server proxy
 }
 ```
 
@@ -187,18 +191,102 @@ interface DocleRunOptions {
 
 ## Configuration
 
-### Custom Endpoint
+### API Authentication
 
-Override the default Docle API endpoint:
+**⚠️ Security Warning:** Never expose API keys in client-side code! Choose one of these production patterns:
+
+#### Pattern 1: useDocle Hook + Server Proxy (Recommended for Custom UI)
+
+Build your own UI with the `useDocle` hook and proxy API calls through your server:
 
 ```tsx
-// Per-component
-<DoclePlayground endpoint="https://api.docle.co" />
+// app/api/docle/api/run/route.ts (Next.js 13+ API Route)
+import { NextResponse } from 'next/server';
 
-// Per-hook
-const { run } = useDocle({ endpoint: "https://api.docle.co" });
+export async function POST(req: Request) {
+  const { code, lang, policy } = await req.json();
+  
+  const result = await fetch('https://api.docle.co/api/run', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ code, lang, policy })
+  });
+  
+  return NextResponse.json(await result.json());
+}
 
-// Globally
+// Component.tsx
+import { useDocle } from '@doclehq/react';
+import { useState } from 'react';
+
+function MyEditor() {
+  const { run, result, loading } = useDocle({ endpoint: '/api/docle' });
+  const [code, setCode] = useState('print("Hello!")');
+
+  return (
+    <div>
+      <textarea value={code} onChange={(e) => setCode(e.target.value)} />
+      <button onClick={() => run(code, { lang: 'python' })} disabled={loading}>
+        Run
+      </button>
+      {result && <pre>{result.stdout}</pre>}
+    </div>
+  );
+}
+```
+
+#### Pattern 2: DoclePlayground + Domain Restrictions (Recommended for Quick UI)
+
+Use the built-in playground component with domain-restricted API keys:
+
+```tsx
+import { DoclePlayground } from '@doclehq/react';
+
+<DoclePlayground 
+  lang="python"
+  code="print('Hello!')"
+  apiKey="sk_live_YOUR_API_KEY"  // Configure domain restrictions in dashboard
+  onRun={(result) => console.log(result)}
+/>
+```
+
+**Set up domain restrictions:**
+1. Go to [app.docle.co](https://app.docle.co/login)
+2. Create an API key
+3. Add allowed domains (e.g., `yourdomain.com`, `*.yourdomain.com`)
+
+**Get your API key:** Sign up at [app.docle.co/login](https://app.docle.co/login) and add it to your `.env.local`:
+
+```bash
+DOCLE_API_KEY=sk_live_YOUR_API_KEY
+```
+
+### Custom Endpoint
+
+**Note:** The `endpoint` prop behavior differs between components:
+
+**DoclePlayground Component:**
+- Changes where the iframe embed loads from (for self-hosted Docle instances)
+- Does NOT proxy API calls
+
+```tsx
+// For self-hosted Docle
+<DoclePlayground endpoint="https://docle.yourcompany.com" />
+```
+
+**useDocle Hook:**
+- Changes where API calls are sent (works with server proxies)
+- Appends `/api/run` to the endpoint
+
+```tsx
+// With your server proxy
+const { run } = useDocle({ endpoint: '/api/docle' });
+// Makes: POST /api/docle/api/run
+
+// Or globally
 window.DOCLE_ENDPOINT = "https://api.docle.co";
 ```
 

@@ -23,6 +23,7 @@ export function DoclePlayground({
   height = '400px',
   width = '100%',
   endpoint,
+  apiKey,
   onReady,
   onRun,
   onError,
@@ -66,6 +67,12 @@ export function DoclePlayground({
     showOutput: String(showOutput),
     autorun: String(autorun)
   });
+  
+  // Add API key if provided
+  if (apiKey) {
+    params.set('apiKey', apiKey);
+  }
+  
   const src = `${baseUrl}/embed?${params}`;
 
   // Normalize height/width

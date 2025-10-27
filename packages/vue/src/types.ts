@@ -7,6 +7,7 @@ export interface DoclePlaygroundProps {
   autorun?: boolean;
   height?: string;
   endpoint?: string;
+  apiKey?: string; // NEW: Optional API key for authenticated access
 }
 
 export interface DocleRunResult {
@@ -21,6 +22,8 @@ export interface DocleRunResult {
     durationMs?: number;
   };
   createdAt: string;
+  demo_mode?: boolean; // NEW: Indicates if running in demo mode
+  upgrade_message?: string; // NEW: Message about upgrading
 }
 
 export interface DocleEmitEvents {

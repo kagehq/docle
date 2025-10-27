@@ -40,11 +40,20 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
         (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 
         'https://api.docle.co';
 
+      // Build headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      // Add API key if provided (priority: runOptions > hook options)
+      const apiKey = runOptions.apiKey || options.apiKey;
+      if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+
       const response = await fetch(`${endpoint}/api/run`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           code,
           lang: runOptions.lang,
@@ -67,7 +76,7 @@ export function useDocle(options: UseDocleOptions = {}): UseDocleReturn {
     } finally {
       setLoading(false);
     }
-  }, [options.endpoint]);
+  }, [options.endpoint, options.apiKey]);
 
   const reset = useCallback(() => {
     setResult(null);

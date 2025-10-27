@@ -50,7 +50,7 @@
   </style>
 </head>
 <body>
-  <h1>🚀 Docle CDN Demo</h1>
+  <h1>Docle CDN Demo</h1>
   <p class="subtitle">Zero-config code playground embedding with one script tag</p>
 
   <!-- Example 1: Inline code -->
@@ -66,6 +66,11 @@ for i in range(3):
     </div>
 
     <pre><code>&lt;script src="https://api.docle.co/embed.js"&gt;&lt;/script&gt;
+
+&lt;!-- Set API key (get from https://app.docle.co/login) --&gt;
+&lt;script&gt;
+  window.docleApiKey = 'sk_live_YOUR_API_KEY';
+&lt;/script&gt;
 
 &lt;div data-docle data-lang="python"&gt;
 print("Hello from Docle!")
@@ -159,7 +164,9 @@ embed.setCode('print("New code!")');</code></pre>
 
   <footer style="margin-top: 80px; padding-top: 40px; border-top: 1px solid #1b232b; color: #9aa8b4; text-align: center;">
     <p>
-      <strong>That's it!</strong> One script tag, zero configuration.<br>
+      <strong>That's it!</strong> One script tag + API key.<br>
+      <br>
+      <strong>Get your API key:</strong> <a href="https://app.docle.co/login" style="color: #8aa2ff;">app.docle.co/login</a><br>
       Powered by <a href="https://developers.cloudflare.com/sandbox/" style="color: #8aa2ff;">Cloudflare Sandbox</a>
     </p>
   </footer>
@@ -168,6 +175,12 @@ embed.setCode('print("New code!")');</code></pre>
   <!-- For local testing: http://localhost:8787/embed.js -->
   <!-- For production: https://api.docle.co/embed.js -->
   <script src="http://localhost:8787/embed.js"></script>
+
+  <!-- IMPORTANT: Set your API key -->
+  <script>
+    // Get your API key from: https://app.docle.co/login
+    window.docleApiKey = 'sk_live_YOUR_API_KEY';
+  </script>
 
   <script>
     // Programmatic control example

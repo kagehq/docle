@@ -50,7 +50,8 @@ const handleRun = (result) => {
 | `showOutput` | `boolean` | `true` | Show output panel |
 | `autorun` | `boolean` | `false` | Run code on mount |
 | `height` | `string` | `'400px'` | Component height |
-| `endpoint` | `string` | `undefined` | Custom Docle API endpoint |
+| `endpoint` | `string` | `'https://api.docle.co'` | Custom API endpoint (use your proxy) |
+| `apiKey` | `string` | `undefined` | ⚠️ **Deprecated** - Use server proxy instead |
 
 ### Events
 
@@ -182,15 +183,97 @@ import type {
 </style>
 ```
 
-### With API Endpoint
+## Production Patterns
+
+**⚠️ Security:** Never expose API keys in client-side code. Choose one of these patterns:
+
+### Pattern 1: useDocle + Server Proxy (Custom UI)
+
+Build your own UI and proxy API calls through your server:
+
+```typescript
+// server/api/docle/api/run.post.ts (Nuxt 3)
+export default defineEventHandler(async (event) => {
+  const { code, lang, policy } = await readBody(event);
+  
+  return await $fetch('https://api.docle.co/api/run', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: { code, lang, policy }
+  });
+});
+```
 
 ```vue
+<script setup>
+import { ref } from 'vue';
+import { useDocle } from '@doclehq/vue';
+
+const { run, result, loading } = useDocle({ endpoint: '/api/docle' });
+const code = ref('print("Hello!")');
+
+const handleRun = async () => {
+  await run(code.value, { lang: 'python' });
+};
+</script>
+
+<template>
+  <div>
+    <textarea v-model="code" />
+    <button @click="handleRun" :disabled="loading">Run</button>
+    <pre v-if="result">{{ result.stdout }}</pre>
+  </div>
+</template>
+```
+
+### Pattern 2: DoclePlayground + Domain Restrictions (Quick UI)
+
+Use the built-in component with domain-restricted API keys:
+
+```vue
+<script setup>
+import { DoclePlayground } from '@doclehq/vue';
+</script>
+
 <template>
   <DoclePlayground
-    endpoint="https://your-docle-instance.workers.dev"
     lang="python"
+    code="print('Secure execution!')"
+    api-key="sk_live_YOUR_API_KEY"
   />
 </template>
+```
+
+**Set up domain restrictions** in your [Docle dashboard](https://app.docle.co) to limit key usage to your domains.
+
+Add your API key to `.env`:
+```bash
+DOCLE_API_KEY=sk_live_YOUR_API_KEY
+```
+
+**Get your API key:** Sign up at [app.docle.co/login](https://app.docle.co/login)
+
+---
+
+### Endpoint Configuration
+
+**Note:** The `endpoint` prop works differently:
+
+- **DoclePlayground**: Changes iframe source (for self-hosted Docle)
+- **useDocle**: Changes API call destination (works with proxies)
+
+```vue
+<!-- Self-hosted Docle -->
+<DoclePlayground endpoint="https://docle.yourcompany.com" />
+
+<!-- Server proxy -->
+<script setup>
+const { run } = useDocle({ endpoint: '/api/docle' });
+// Makes: POST /api/docle/api/run
+</script>
 ```
 
 ## License

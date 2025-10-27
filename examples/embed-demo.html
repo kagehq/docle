@@ -78,12 +78,28 @@
   </style>
 </head>
 <body>
-  <h1>🚀 Docle Embed Demo</h1>
+  <h1>Docle Embed Demo</h1>
   <p class="subtitle">Embeddable code playgrounds powered by Cloudflare</p>
   
   <div style="background: #1b232b; border-left: 4px solid #8aa2ff; padding: 16px; border-radius: 8px; margin-bottom: 40px;">
-    <strong>💡 Note:</strong> These examples use <code style="background: #11161b; padding: 2px 6px; border-radius: 4px;">localhost:8787</code> for local testing. 
+    <strong>Note:</strong> These examples use <code style="background: #11161b; padding: 2px 6px; border-radius: 4px;">localhost:8787</code> for local testing. 
     In production, use <code style="background: #11161b; padding: 2px 6px; border-radius: 4px;">https://api.docle.co</code>
+  </div>
+
+  <div style="background: #1b2b1f; border-left: 4px solid #51cf66; padding: 16px; border-radius: 8px; margin-bottom: 40px;">
+    <strong>API Keys:</strong> Create a free account at 
+    <a href="https://app.docle.co/login" style="color: #51cf66;">app.docle.co</a> and send your API key via postMessage:
+    <pre style="margin: 10px 0 0 0; background: #11161b;"><code>// BETTER: Fetch API key from your server
+const { apiKey } = await fetch('/api/get-docle-key').then(r => r.json());
+
+window.addEventListener('message', (e) => {
+  if (e.data.type === 'docle-ready') {
+    iframe.contentWindow.postMessage({
+      type: 'docle-set-apikey',
+      apiKey  // From your backend
+    }, '*');
+  }
+});</code></pre>
   </div>
 
   <!-- Example 1: Basic Python Embed -->
@@ -159,8 +175,8 @@
         id="embed5"
       ></iframe>
     </div>
-    <button onclick="runEmbed5()">▶ Run from Parent</button>
-    <button onclick="updateEmbed5()">✏️ Update Code</button>
+    <button onclick="runEmbed5()">Run from Parent</button>
+    <button onclick="updateEmbed5()">Update Code</button>
     <div id="result5" class="result" style="display: none;">
       <h3>Result from iframe:</h3>
       <pre id="result5-text"></pre>
@@ -183,12 +199,21 @@ iframe.contentWindow.postMessage({
   </div>
 
   <script>
+    // YOUR API KEY - Get from https://app.docle.co
+    const DOCLE_API_KEY = 'sk_live_YOUR_API_KEY_HERE';
+    
     // Listen for messages from all embeds
     window.addEventListener('message', (e) => {
       console.log('Message from embed:', e.data);
       
       if (e.data.type === 'docle-ready') {
-        console.log('Embed ready:', e.data.data);
+        console.log('Embed ready, sending API key...');
+        
+        // Send API key to the iframe that's ready
+        e.source.postMessage({
+          type: 'docle-set-apikey',
+          apiKey: DOCLE_API_KEY
+        }, '*');
       }
       
       if (e.data.type === 'docle-result') {

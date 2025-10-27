@@ -5,7 +5,11 @@ export type Env = {
   RUNS: KVNamespace; 
   SANDBOX?: DurableObjectNamespace<Sandbox>; // Cloudflare Sandbox binding (Production only)
   COLLAB_SESSION: DurableObjectNamespace<CollabSession>; // Collaborative editing sessions
+  DB: D1Database; // D1 database for users, projects, API keys
   APP_NAME: string;
+  APP_URL?: string;
+  RESEND_API_KEY?: string; // Resend API key for sending magic link emails
+  EMAIL_FROM?: string; // Email sender address (e.g. "Docle <onboarding@docle.co>")
 };
 
 const RUN_INDEX_KEY = "runs:index";

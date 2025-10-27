@@ -1,8 +1,9 @@
 import { ref } from 'vue';
-import { runSandbox, type RunOptions, type RunResponse } from '@docle/sdk';
+import { runSandbox, type RunOptions, type RunResponse } from '@doclehq/sdk';
 
 export interface UseDocleOptions {
   endpoint?: string;
+  apiKey?: string; // NEW: Optional API key for authenticated access
 }
 
 export function useDocle(options?: UseDocleOptions) {
@@ -17,7 +18,8 @@ export function useDocle(options?: UseDocleOptions) {
     try {
       const res = await runSandbox(code, {
         ...opts,
-        endpoint: options?.endpoint || opts.endpoint
+        endpoint: options?.endpoint || opts.endpoint,
+        apiKey: options?.apiKey || opts.apiKey // Pass API key if provided
       });
       result.value = res;
       return res;

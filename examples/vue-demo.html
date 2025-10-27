@@ -245,15 +245,15 @@ for (let i = 0; i < 5; i++) {
             </div>
 
             <div v-if="loading" class="status loading">
-              ⏳ Executing code...
+              Executing code...
             </div>
 
             <div v-if="result && !loading" class="status success">
-              ✓ Execution completed in {{ result.usage?.durationMs || 0 }}ms
+              Execution completed in {{ result.usage?.durationMs || 0 }}ms
             </div>
 
             <div v-if="error" class="status error">
-              ✗ Error: {{ error.message }}
+              Error: {{ error.message }}
             </div>
 
             <div v-if="result" class="output">

@@ -2,6 +2,8 @@
 
 This directory contains examples of how to embed Docle code playgrounds in your applications.
 
+> **⚠️ Security Notice:** These examples are for development and learning purposes. Many show API keys in client-side code for simplicity. **In production**, always use server-side proxies to keep API keys secure. See the [Integration Snippets](https://app.docle.co/snippets) page for secure patterns.
+
 ## Quick Start
 
 1. Start the dev server:
@@ -56,9 +58,21 @@ open examples/embed-demo.html
 <iframe src="https://api.docle.co/embed?theme=light"></iframe>
 ```
 
-**Read-only (demo mode):**
+**Read-only:**
 ```html
 <iframe src="https://api.docle.co/embed?readonly=true"></iframe>
+
+<!-- Note: API key required for execution -->
+<script>
+window.addEventListener('message', (e) => {
+  if (e.data.type === 'docle-ready') {
+    document.querySelector('iframe').contentWindow.postMessage({
+      type: 'docle-set-apikey',
+      apiKey: 'sk_live_YOUR_API_KEY'
+    }, '*');
+  }
+});
+</script>
 ```
 
 ## PostMessage API
@@ -139,16 +153,46 @@ Embed coding challenges for hiring or education:
 ```
 
 ### 4. Product Demo
-Let users try your product without signup:
+Let users try your product interactively:
 
 ```html
 <h2>Try Our Data Processing API</h2>
-<iframe src="https://api.docle.co/embed?lang=python&code=from%20your_sdk%20import%20process_data%0A%0Adata%20%3D%20%5B1%2C%202%2C%203%5D%0Aresult%20%3D%20process_data(data)%0Aprint(result)"></iframe>
+<iframe 
+  id="demo-frame"
+  src="https://api.docle.co/embed?lang=python&code=from%20your_sdk%20import%20process_data%0A%0Adata%20%3D%20%5B1%2C%202%2C%203%5D%0Aresult%20%3D%20process_data(data)%0Aprint(result)"
+></iframe>
+
+<script>
+// Provide API key for execution
+window.addEventListener('message', (e) => {
+  if (e.data.type === 'docle-ready') {
+    document.getElementById('demo-frame').contentWindow.postMessage({
+      type: 'docle-set-apikey',
+      apiKey: 'sk_live_YOUR_API_KEY'  // Get from https://app.docle.co
+    }, '*');
+  }
+});
+</script>
 ```
+
+> **Note:** All code execution requires an API key. Get yours free at [app.docle.co/login](https://app.docle.co/login)
+
+## Getting an API Key
+
+All examples require an API key:
+
+1. Sign up at [app.docle.co/login](https://app.docle.co/login)
+2. Create a project
+3. Generate an API key
+4. Use it in your examples (as shown above)
+
+**Free during beta!** Unlimited executions with secure, isolated sandboxes.
+
+---
 
 ## Next Steps
 
 - See the [React component example](../packages/react/) for framework integration
 - Check the [main README](../README.md) for API documentation
-- Read about [web components](../packages/web-component/) for universal compatibility
+- Visit [Integration Snippets](https://app.docle.co/snippets) for secure production patterns
 

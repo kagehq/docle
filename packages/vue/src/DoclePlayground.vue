@@ -43,6 +43,12 @@ const iframeSrc = computed(() => {
     showOutput: String(props.showOutput),
     autorun: String(props.autorun)
   });
+  
+  // Add API key if provided
+  if (props.apiKey) {
+    params.set('apiKey', props.apiKey);
+  }
+  
   return `${baseUrl}/embed?${params.toString()}`;
 });
 

@@ -11,6 +11,7 @@ export interface DocleRunOptions {
   lang: Lang;
   policy?: DoclePolicy;
   endpoint?: string;
+  apiKey?: string; // NEW: Optional API key for authenticated access
 }
 
 export interface DocleResult {
@@ -25,6 +26,8 @@ export interface DocleResult {
     durationMs?: number;
   };
   createdAt: string;
+  demo_mode?: boolean; // NEW: Indicates if running in demo mode
+  upgrade_message?: string; // NEW: Message about upgrading
 }
 
 export interface DoclePlaygroundProps {
@@ -46,6 +49,8 @@ export interface DoclePlaygroundProps {
   width?: string | number;
   /** API endpoint override */
   endpoint?: string;
+  /** API key for authenticated access (NEW) */
+  apiKey?: string;
   /** Callback when embed is ready */
   onReady?: (data: { lang: Lang }) => void;
   /** Callback when code executes */
@@ -61,6 +66,8 @@ export interface DoclePlaygroundProps {
 export interface UseDocleOptions {
   /** API endpoint override */
   endpoint?: string;
+  /** API key for authenticated access (NEW) */
+  apiKey?: string;
 }
 
 export interface UseDocleReturn {

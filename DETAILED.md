@@ -6,20 +6,24 @@
 
 1. [Overview](#overview)
 2. [Core Features](#core-features)
-3. [REST API Reference](#rest-api-reference)
-4. [SDK & Framework Packages](#sdk--framework-packages)
-5. [Embeddable Components](#embeddable-components)
-6. [Security & Sandboxing](#security--sandboxing)
-7. [Multi-File Projects](#multi-file-projects)
-8. [Package Installation](#package-installation)
-9. [Collaborative Editing](#collaborative-editing)
-10. [Execution Policies](#execution-policies)
-11. [Storage & History](#storage--history)
-12. [Architecture](#architecture)
-13. [Use Cases](#use-cases)
-14. [Deployment Guide](#deployment-guide)
-15. [Performance & Limits](#performance--limits)
-16. [Troubleshooting](#troubleshooting)
+3. [Authentication & API Keys](#authentication--api-keys)
+4. [Rate Limiting](#rate-limiting)
+5. [Usage Analytics](#usage-analytics)
+6. [REST API Reference](#rest-api-reference)
+7. [SDK & Framework Packages](#sdk--framework-packages)
+8. [Embeddable Components](#embeddable-components)
+9. [Security & Sandboxing](#security--sandboxing)
+10. [Multi-File Projects](#multi-file-projects)
+11. [Package Installation](#package-installation)
+12. [Collaborative Editing](#collaborative-editing)
+13. [Execution Policies](#execution-policies)
+14. [Storage & History](#storage--history)
+15. [Dashboard UI](#dashboard-ui)
+16. [Architecture](#architecture)
+17. [Use Cases](#use-cases)
+18. [Deployment Guide](#deployment-guide)
+19. [Performance & Limits](#performance--limits)
+20. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -63,6 +67,351 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 - **Vue 3 Components** - Native Vue integration
 - **CDN Embed** - One-line website integration
 - **iframe Embed** - Sandboxed iframe embedding
+
+---
+
+## Authentication & API Keys
+
+Docle uses **magic link** authentication for the dashboard and **API keys** for code execution.
+
+### Magic Link Authentication
+
+Passwordless authentication flow for dashboard access.
+
+**How it works:**
+1. User enters email on `/login`
+2. Backend generates unique token & sends magic link
+3. User clicks link in email
+4. Backend creates session & sets cookie
+5. User redirected to dashboard
+
+**Security:**
+- 15-minute token expiration
+- Single-use tokens
+- IP rate limiting (5 requests per 15 min)
+- HttpOnly session cookies
+- 30-day session expiration
+
+**Request Magic Link:**
+```bash
+curl -X POST https://api.docle.co/auth/request \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com"}'
+```
+
+**Response:**
+```json
+{
+  "message": "If an account exists, a magic link has been sent to your email"
+}
+```
+
+### API Key Management
+
+API keys authenticate `/api/run` requests. All code execution **requires a valid API key**.
+
+**Key Format:** `sk_live_` + 48 random hex characters
+
+**Features:**
+- **Multiple keys per project** - Create unlimited keys
+- **Custom names** - "Production", "Development", etc.
+- **Domain restrictions** - Optional whitelist (supports wildcards)
+- **Per-key rate limits** - 1 to 10,000 requests per minute
+- **Revocation** - Instantly disable compromised keys
+- **SHA-256 hashing** - Keys never stored in plaintext
+- **Last used tracking** - Monitor key activity
+
+### Creating API Keys
+
+**Via Dashboard:**
+1. Sign in at `https://app.docle.co`
+2. Create a project
+3. Click "Generate Key"
+4. Configure name, domains, and rate limit
+5. Copy key (shown once!)
+
+**Via API:**
+```bash
+curl -X POST https://api.docle.co/api/projects/{project_id}/keys \
+  -H "Cookie: docle_session=YOUR_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production API",
+    "allowedDomains": ["app.example.com", "*.example.com"],
+    "rateLimitPerMinute": 300
+  }'
+```
+
+**Response:**
+```json
+{
+  "key": "sk_live_abc123...",
+  "id": "key_xyz789"
+}
+```
+
+⚠️ **Store this key securely! It won't be shown again.**
+
+### Using API Keys
+
+All `/api/run` requests **must** include an API key in the `Authorization` header:
+
+```bash
+curl -X POST https://api.docle.co/api/run \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "print(\"Hello, World!\")",
+    "lang": "python"
+  }'
+```
+
+**Without API key:**
+```json
+{
+  "error": "API key required",
+  "message": "Sign in and create a project to get your API key",
+  "signup_url": "https://app.docle.co/login"
+}
+```
+
+### Domain Restrictions
+
+Restrict API keys to specific domains for enhanced security.
+
+**Supported formats:**
+- `example.com` - Exact match
+- `*.example.com` - Wildcard subdomain
+- `app.example.com` - Specific subdomain
+
+**How it works:**
+1. Extract origin from `Origin` or `Referer` header
+2. Check if origin hostname matches allowed domains
+3. Block request if domain not in whitelist
+
+**Example:**
+```json
+{
+  "allowedDomains": ["app.docle.co", "*.docle.co", "localhost"]
+}
+```
+
+Allows:
+- ✅ `https://app.docle.co`
+- ✅ `https://dashboard.docle.co` (wildcard match)
+- ✅ `http://localhost:3000`
+
+Blocks:
+- ❌ `https://evil.com`
+- ❌ `https://docle.com` (no wildcard, exact match failed)
+
+### Revoking API Keys
+
+Instantly disable compromised keys:
+
+```bash
+curl -X DELETE https://api.docle.co/api/keys/{key_id} \
+  -H "Cookie: docle_session=YOUR_SESSION"
+```
+
+Revoked keys immediately return `401 Unauthorized` on all requests.
+
+---
+
+## Rate Limiting
+
+Docle implements **two layers of rate limiting** to prevent abuse and control costs.
+
+### Per-API-Key Rate Limiting
+
+Each API key has a customizable rate limit (requests per minute).
+
+**Configuration:**
+- **Range:** 1 - 10,000 requests per minute
+- **Default:** 60 req/min
+- **Granularity:** Per minute (rolling window)
+- **Storage:** KV store for distributed counting
+
+**Rate Limit Headers:**
+
+Every `/api/run` response includes:
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 55
+X-RateLimit-Reset: 1735291380000
+```
+
+- `Limit` - Maximum requests per minute for this key
+- `Remaining` - Requests left in current window
+- `Reset` - Unix timestamp when limit resets (next minute)
+
+**Example Response (Success):**
+```bash
+$ curl -i https://api.docle.co/api/run \
+  -H "Authorization: Bearer sk_live_xxx" \
+  -d '{"code":"print(1)","lang":"python"}'
+
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1735291380000
+
+{
+  "id": "run_abc123",
+  "ok": true,
+  "exitCode": 0,
+  "stdout": "1\n"
+}
+```
+
+**Example Response (Rate Limited):**
+```bash
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1735291380000
+
+{
+  "error": "Rate limit exceeded",
+  "message": "You have exceeded your rate limit of 60 requests per minute. Please try again in 30 seconds.",
+  "limit": 60,
+  "remaining": 0,
+  "reset_at": 1735291380000
+}
+```
+
+**Setting Rate Limits:**
+
+When creating an API key, specify `rateLimitPerMinute`:
+
+```json
+{
+  "name": "High-Volume Key",
+  "rateLimitPerMinute": 1000
+}
+```
+
+**Use Cases:**
+
+| Limit | Use Case |
+|-------|----------|
+| **10/min** | Public demos, free tier, embedded playgrounds |
+| **60/min** | Development, testing, light production usage |
+| **300/min** | Standard production apps, typical SaaS usage |
+| **1000/min** | High-volume apps, batch processing, enterprise |
+
+**Best Practices:**
+- Set lower limits for public/demo keys
+- Use higher limits for trusted backend services
+- Monitor `X-RateLimit-Remaining` header
+- Implement exponential backoff when hitting limits
+- Create separate keys for different environments
+
+### IP-Based Rate Limiting
+
+Protects unauthenticated endpoints from abuse (e.g., magic link requests).
+
+**Limits:**
+- **Magic Link Requests (`/auth/request`):** 5 per 15 minutes per IP
+- **Purpose:** Prevent email bombing attacks
+- **Detection:** Cloudflare `CF-Connecting-IP` header
+
+**Example Response:**
+```json
+{
+  "error": "Too many requests",
+  "message": "Rate limit exceeded. Please try again in 10 minutes.",
+  "retry_after": 600
+}
+```
+
+**Implementation:**
+- Tracks requests per IP per time window
+- Uses KV store: `ip_ratelimit:{action}:{ip}:{window}`
+- Automatic cleanup after window expires
+- Fail-safe: allows on error
+
+---
+
+## Usage Analytics
+
+Track detailed execution metrics for each project.
+
+### Metrics Tracked
+
+**Per Execution:**
+- Language (Python/Node.js)
+- Code snippet (truncated)
+- Status (success/error)
+- Exit code
+- Execution time (milliseconds)
+- IP address (optional)
+- Timestamp
+
+**Aggregated:**
+- Total runs
+- Language breakdown
+- Success rate percentage
+- Execution history (last 50 runs)
+
+### Viewing Analytics
+
+**Dashboard:** Navigate to project → "Usage" tab
+
+**API Endpoint:**
+```bash
+curl https://api.docle.co/api/projects/{project_id}/usage \
+  -H "Cookie: docle_session=YOUR_SESSION"
+```
+
+**Response:**
+```json
+{
+  "total_runs": 1250,
+  "python_runs": 800,
+  "nodejs_runs": 450,
+  "success_rate": 94.5,
+  "history": [
+    {
+      "id": "run_abc123",
+      "language": "python",
+      "code_snippet": "print('Hello, World!')",
+      "status": "success",
+      "exit_code": 0,
+      "execution_time_ms": 45,
+      "created_at": "2025-10-27T12:30:00.000Z"
+    },
+    // ... more runs
+  ]
+}
+```
+
+### Usage by API Key
+
+Track which keys are being used most:
+
+```bash
+curl https://api.docle.co/api/projects/{project_id}/keys \
+  -H "Cookie: docle_session=YOUR_SESSION"
+```
+
+**Response includes:**
+```json
+{
+  "apiKeys": [
+    {
+      "id": "key_xyz789",
+      "name": "Production",
+      "key_prefix": "sk_live_abc1",
+      "rate_limit_per_minute": 300,
+      "last_used_at": "2025-10-27T12:35:00.000Z",
+      "is_active": 1,
+      "created_at": "2025-10-20T10:00:00.000Z"
+    }
+  ]
+}
+```
 
 ---
 
@@ -687,6 +1036,136 @@ The playground UI also stores executions locally:
 - **Limit:** Last 50 executions
 - **Persistence:** Until cleared by user
 - **Features:** Quick replay, code templates
+
+---
+
+## Dashboard UI
+
+Docle provides a modern, production-ready dashboard built with **Nuxt.js** and **Tailwind CSS**.
+
+### Pages
+
+#### Login (`/login`)
+- **Magic link authentication**
+- **Email input** with validation
+- **Sleek dark theme** with purple-blue gradients
+- **IP rate-limited** (5 requests per 15 min)
+
+#### Dashboard (`/`)
+- **Project overview** - All your projects
+- **Create new projects** - Quick action button
+- **Project cards** - Name, ID, creation date
+- **Empty state** - Helpful quick start guide
+- **Modern dark theme** - Consistent brand identity
+
+#### Playground (`/playground`)
+- **Live code editor** with syntax highlighting (Monaco)
+- **Language selector** - Python & Node.js
+- **Multi-file mode** - File tree navigation
+- **Package management** - Add npm/pip packages
+- **Run output** - stdout/stderr display
+- **Execution history** - Recent runs
+- **Collaboration mode** - Real-time editing (WebSocket)
+- **Auto-generated API key** - Seamless authenticated execution
+- **Auth required** - Redirects to login if not signed in
+
+#### Project Details (`/projects/[id]`)
+- **Breadcrumb navigation** - Dashboard → Projects → [Name]
+- **Two tabs:**
+  - **API Keys** - Generate, view, revoke keys
+  - **Usage** - Analytics and execution history
+- **Generate key modal** with:
+  - Custom name input
+  - Domain restrictions (multiple domains supported)
+  - Rate limit selector (presets: 10, 60, 300, 1000/min)
+- **Key list** showing:
+  - Name, prefix, status (active/revoked)
+  - Rate limit (e.g., "60 req/min")
+  - Creation date, last used
+  - Revoke button
+- **Usage stats cards:**
+  - Total runs
+  - Python runs
+  - Node.js runs
+  - Success rate
+- **Execution history table:**
+  - Time, language, code snippet
+  - Status, exit code, duration
+
+#### Snippets (`/snippets`)
+- **Multiple integration examples:**
+  - CDN (script tag)
+  - React component
+  - Vue component
+  - iframe embedding
+  - TypeScript SDK
+- **Live preview** - Interactive demo
+- **Copy to clipboard** - One-click code copying
+- **Syntax highlighting** - Color-coded examples
+- **Installation instructions** - Step-by-step guides
+- **Auth required** - Sign in to view
+
+#### Embed Page (`/embed`)
+- **Minimal playground** for iframe embedding
+- **URL parameters** - lang, code, theme, readonly, autorun
+- **postMessage API** - Parent-child communication
+- **Secure API key** - Passed from parent via postMessage
+- **Read-only mode** - Display-only execution
+- **Auto-run** - Execute on load
+- **Public access** - No auth required (security via API key)
+
+### Features
+
+#### Authentication Guard
+- All protected routes check authentication status
+- Redirects to `/login` if not authenticated
+- Session stored in HttpOnly cookie
+- 30-day expiration
+
+#### User Dropdown
+- Shows user email
+- Sign out button
+- Appears on all authenticated pages
+- Avatar with user initials
+
+#### Responsive Design
+- Mobile-friendly layouts
+- Tailwind CSS utility classes
+- Dark theme throughout
+- Purple-to-blue gradient accents
+
+#### Error Handling
+- Toast notifications for errors
+- Loading states for async operations
+- Empty states with helpful CTAs
+- Graceful fallbacks
+
+### Navigation
+
+```
+/                 → Dashboard (home)
+/login            → Magic link auth
+/playground       → Code playground (auth required)
+/snippets         → Integration examples (auth required)
+/projects/[id]    → Project details (auth required)
+/embed            → Minimal embed page (public)
+```
+
+### UI Components
+
+**Reusable:**
+- `AppHeader` - Navigation header with auth status
+- Loading spinners - Gradient dual-ring animation
+- Modals - Dark themed with blur backdrop
+- Buttons - Primary (purple-blue gradient), secondary (gray)
+- Cards - Dark with subtle borders
+- Forms - Dark inputs with focus states
+
+**Styling:**
+- **Colors:** Black background, gray borders, purple-blue accents
+- **Typography:** Sans-serif, clear hierarchy
+- **Spacing:** Generous padding, consistent margins
+- **Animations:** Smooth transitions, hover effects
 
 ---
 
@@ -1457,3 +1936,4 @@ The playground includes a professional code editor powered by CodeMirror 6.
 FSL-1.1-MIT - See [LICENSE](./LICENSE) for details.
 
 Built with ❤️ using [Cloudflare Workers](https://workers.cloudflare.com), [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/), and [Hono](https://hono.dev)
+

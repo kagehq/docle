@@ -10,7 +10,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local",
+    "dev": "wrangler dev --local --persist-to .wrangler/state",
     "dev:playground": "cd playground && npm run dev",
     "start": "npm run dev & npm run dev:playground",
     "deploy": "wrangler deploy",

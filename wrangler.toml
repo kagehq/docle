@@ -9,21 +9,49 @@ binding = "RUNS"
 id = "809528141f1a4f7b89c7d84499ee8c77"
 preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 
+# D1 Database for SaaS (users, projects, API keys)
+# Run: npx wrangler d1 create docle-db
+# Then replace database_id below
+[[d1_databases]]
+binding = "DB"
+database_name = "docle-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"  # Replace with actual ID
+
 [vars]
 APP_NAME = "Docle"
+APP_URL = "http://localhost:3001"  # Frontend URL - Update for production (e.g. "https://app.docle.co")
 
-# Enable Cloudflare Sandbox (Production Only - Containers don't work in local dev)
+# ============================================================================
+# Email Configuration (Magic Links)
+# ============================================================================
+# For local dev: Leave these commented out and magic links will print to terminal
+# For production: Uncomment and add your Resend API key
+#
+# Get your API key from: https://resend.com/api-keys
+# RESEND_API_KEY = "re_..."
+# EMAIL_FROM = "Docle <onboarding@docle.co>"  # Must be a verified domain in Resend
+
+# ============================================================================
+# ADVANCED: Cloudflare Sandbox with Containers (Optional - Not currently used)
+# ============================================================================
+# The code currently uses Cloudflare's Sandbox API directly via runInSandbox()
+# which works for both local dev and production without this configuration.
+# 
+# Only uncomment these if you want to use the container-based approach:
+# 1. Uncomment the sections below
+# 2. Add to src/index.ts: export { Sandbox } from "@cloudflare/sandbox";
+# 3. Deploy (containers don't work in local dev)
+# ============================================================================
 # [[migrations]]
 # tag = "v7"
 # new_sqlite_classes = ["Sandbox"]
-
-# Cloudflare Sandbox with Containers (Comment out for local dev, uncomment for production deploy)
+#
 # [[containers]]
 # class_name = "Sandbox"
 # image = "./Dockerfile"
 # name = "docle-sandbox"
 # max_instances = 10
-
+#
 # [[durable_objects.bindings]]
 # name = "SANDBOX"
 # class_name = "Sandbox"

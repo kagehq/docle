@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
+useHead({
+  title: 'Embedded Playground - Docle'
+})
+
 // Get params from URL
 const route = useRoute()
 const lang = ref<'python' | 'node'>(route.query.lang as any || 'python')
@@ -14,6 +18,8 @@ const autorun = ref(route.query.autorun === 'true')
 const output = ref('')
 const isRunning = ref(false)
 const lastRunResult = ref<any>(null)
+const apiKey = ref<string | null>(null)
+const parentOrigin = ref<string>('*')
 
 // Initialize code if empty
 if (!code.value) {
@@ -39,80 +45,94 @@ const getFriendlyError = (message: string): string => {
 
 const runCode = async (retryCount = 0) => {
   if (isRunning.value) return
-  
+
   isRunning.value = true
-  output.value = retryCount > 0 
-    ? `Retrying... (attempt ${retryCount + 1}/3)` 
+  output.value = retryCount > 0
+    ? `Retrying... (attempt ${retryCount + 1}/3)`
     : 'Executing code...'
-  
+
   try {
     console.log('Running code:', { lang: lang.value, code: code.value })
-    
+
+    // Check if API key is available
+    if (!apiKey.value) {
+      throw new Error('API key required. Parent window must provide an API key via postMessage.')
+    }
+
     // Use production API or local proxy
     const apiUrl = window.location.hostname === 'localhost'
       ? '/api/run'  // Use local proxy in development
       : 'https://api.docle.co/api/run'  // Production API
-    
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    }
+
+    // Add Authorization header if API key is provided
+    if (apiKey.value) {
+      headers['Authorization'] = `Bearer ${apiKey.value}`
+    }
+
     const res = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         lang: lang.value,
         code: code.value,
         policy: { timeoutMs: 10000 }
       })
     })
-    
+
     console.log('Response status:', res.status)
-    
+
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`)
     }
-    
+
     const result = await res.json()
     console.log('Result:', result)
-    
+
     lastRunResult.value = result
-    
+
     // Extract output from result (API returns stdout/stderr)
     const combinedOutput = [result.stdout, result.stderr]
       .filter(Boolean)
       .join('\n')
       .trim()
-    
+
     output.value = combinedOutput || '(no output)'
-    
-    // Post message to parent
+
+    // Post message to parent (using validated origin)
     window.parent.postMessage({
       type: 'docle-result',
       data: result
-    }, '*')
-    
+    }, parentOrigin.value)
+
   } catch (error: any) {
     console.error('Error running code:', error)
-    
+
     const friendlyError = getFriendlyError(error.message || String(error))
-    
+
     // Auto-retry on timeout/server errors
     const shouldRetry = (
-      (error.message?.includes('timeout') || 
+      (error.message?.includes('timeout') ||
        error.message?.includes('HTTP 50') ||
        error.message?.includes('fetch failed')) &&
       retryCount < 2
     )
-    
+
     if (shouldRetry) {
       console.log(`Retrying... (${retryCount + 1}/2)`)
       // Wait 2 seconds before retry
       await new Promise(resolve => setTimeout(resolve, 2000))
       return runCode(retryCount + 1)
     }
-    
+
     output.value = friendlyError
     window.parent.postMessage({
       type: 'docle-error',
       data: { error: friendlyError }
-    }, '*')
+    }, parentOrigin.value)
   } finally {
     isRunning.value = false
   }
@@ -122,21 +142,44 @@ const runCode = async (retryCount = 0) => {
 onMounted(() => {
   // Notify parent that iframe is ready
   window.parent.postMessage({ type: 'docle-ready', data: {} }, '*')
-  
+
   // Listen for commands
   window.addEventListener('message', (event) => {
-    const { type, code: newCode } = event.data
-    
-    if (type === 'docle-run') {
+    // Security: Validate and store parent origin on first message
+    if (parentOrigin.value === '*' && event.origin) {
+      // Store the origin of the first message as the trusted parent
+      parentOrigin.value = event.origin
+      console.log('🔒 Parent origin validated:', event.origin)
+    } else if (parentOrigin.value !== '*' && event.origin !== parentOrigin.value) {
+      // Reject messages from untrusted origins
+      console.warn('⚠️ Rejected message from untrusted origin:', event.origin, 'Expected:', parentOrigin.value)
+      return
+    }
+
+    const { type, code: newCode, apiKey: newApiKey } = event.data
+
+    if (type === 'docle-set-apikey' && newApiKey) {
+      // Parent provides API key
+      apiKey.value = newApiKey
+      console.log('✅ API key received from parent')
+    } else if (type === 'docle-run') {
       runCode()
     } else if (type === 'docle-set-code' && newCode) {
       code.value = newCode
     }
   })
-  
-  // Autorun if requested
+
+  // Autorun if requested (but only if API key is set)
   if (autorun.value) {
-    runCode()
+    // Wait a bit for API key to be set by parent
+    setTimeout(() => {
+      if (apiKey.value) {
+        runCode()
+      } else {
+        console.warn('⚠️ Autorun requested but no API key provided')
+        output.value = '⚠️ API key required. Parent window must send API key via postMessage.'
+      }
+    }, 500)
   }
 })
 </script>
@@ -151,13 +194,12 @@ onMounted(() => {
         </div>
         <span class="text-xs text-gray-500">Embedded Playground</span>
       </div>
-      
+
       <div class="flex items-center gap-2">
-        <div class="relative">
-          <select 
-            v-model="lang" 
-            :disabled="readonly"
-            class="pl-3 pr-8 py-1.5 text-xs rounded-lg bg-gray-500/10 border border-gray-500/10 text-white appearance-none cursor-pointer hover:border-gray-500/20 focus:border-gray-500/30 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+        <div v-if="!readonly" class="relative">
+          <select
+            v-model="lang"
+            class="pl-3 pr-8 py-1.5 text-xs rounded-lg bg-gray-500/10 border border-gray-500/10 text-white appearance-none cursor-pointer hover:border-gray-500/20 focus:border-gray-500/30 focus:outline-none transition-all">
             <option value="python">Python</option>
             <option value="node">Node.js</option>
           </select>
@@ -165,16 +207,21 @@ onMounted(() => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
           </svg>
         </div>
-        
-        <button 
+
+        <div v-else class="text-xs text-gray-500 px-3 py-1.5">
+          Read-only
+        </div>
+
+        <button
+          v-if="!readonly"
           @click="runCode"
-          :disabled="isRunning || readonly"
+          :disabled="isRunning"
           class="px-3 py-1.5 text-xs rounded-lg bg-blue-300 text-black font-medium hover:bg-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           {{ isRunning ? 'Running...' : 'Run' }}
         </button>
       </div>
     </div>
-    
+
     <!-- Editor -->
     <div class="flex-1 overflow-hidden">
       <textarea
@@ -185,7 +232,7 @@ onMounted(() => {
         spellcheck="false"
       ></textarea>
     </div>
-    
+
     <!-- Output -->
     <div v-if="showOutput" class="h-48 bg-gray-500/10 border-t border-gray-500/10 overflow-hidden flex flex-col flex-shrink-0">
       <div class="px-3 py-2 border-b border-gray-500/10 flex items-center justify-between">
