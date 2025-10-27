@@ -3,16 +3,16 @@ import type { UseDocleOptions, UseDocleReturn, DocleResult, DocleRunOptions } fr
 
 /**
  * Headless hook for programmatic code execution
- * 
+ *
  * @example
  * ```tsx
  * function MyEditor() {
  *   const { run, result, loading, error } = useDocle();
- *   
+ *
  *   const handleRun = async () => {
  *     await run('print("Hello")', { lang: 'python' });
  *   };
- *   
+ *
  *   return (
  *     <div>
  *       <button onClick={handleRun} disabled={loading}>Run</button>
@@ -36,8 +36,8 @@ export function useDocle({ endpoint, apiKey, userContext }: UseDocleOptions = {}
     setError(null);
 
     try {
-      const effectiveEndpoint = runOptions.endpoint || endpoint || 
-        (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 
+      const effectiveEndpoint = runOptions.endpoint || endpoint ||
+        (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) ||
         'https://api.docle.co';
 
       // Build headers

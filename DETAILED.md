@@ -8,22 +8,24 @@
 2. [Core Features](#core-features)
 3. [Authentication & API Keys](#authentication--api-keys)
 4. [Rate Limiting](#rate-limiting)
-5. [Usage Analytics](#usage-analytics)
-6. [REST API Reference](#rest-api-reference)
-7. [SDK & Framework Packages](#sdk--framework-packages)
-8. [Embeddable Components](#embeddable-components)
-9. [Security & Sandboxing](#security--sandboxing)
-10. [Multi-File Projects](#multi-file-projects)
-11. [Package Installation](#package-installation)
-12. [Collaborative Editing](#collaborative-editing)
-13. [Execution Policies](#execution-policies)
-14. [Storage & History](#storage--history)
-15. [Dashboard UI](#dashboard-ui)
-16. [Architecture](#architecture)
-17. [Use Cases](#use-cases)
-18. [Deployment Guide](#deployment-guide)
-19. [Performance & Limits](#performance--limits)
-20. [Troubleshooting](#troubleshooting)
+5. [Per-User Rate Limiting](#per-user-rate-limiting)
+6. [User Context Tracking](#user-context-tracking)
+7. [Usage Analytics](#usage-analytics)
+8. [REST API Reference](#rest-api-reference)
+9. [SDK & Framework Packages](#sdk--framework-packages)
+10. [Embeddable Components](#embeddable-components)
+11. [Security & Sandboxing](#security--sandboxing)
+12. [Multi-File Projects](#multi-file-projects)
+13. [Package Installation](#package-installation)
+14. [Collaborative Editing](#collaborative-editing)
+15. [Execution Policies](#execution-policies)
+16. [Storage & History](#storage--history)
+17. [Dashboard UI](#dashboard-ui)
+18. [Architecture](#architecture)
+19. [Use Cases](#use-cases)
+20. [Deployment Guide](#deployment-guide)
+21. [Performance & Limits](#performance--limits)
+22. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -331,6 +333,457 @@ Protects unauthenticated endpoints from abuse (e.g., magic link requests).
 - Uses KV store: `ip_ratelimit:{action}:{ip}:{window}`
 - Automatic cleanup after window expires
 - Fail-safe: allows on error
+
+---
+
+## Per-User Rate Limiting
+
+For SaaS applications with multiple users, implement per-user rate limiting in your server proxy to ensure fair usage and prevent one user from exhausting your API quota.
+
+### Why Per-User Rate Limiting?
+
+**Without per-user limits (per-key only):**
+- All users share one API key's rate limit
+- One abusive user affects everyone
+- Hard to implement fair usage policies
+- No user-specific quota management
+
+**With per-user limits:**
+- Each user gets their own quota
+- Isolated limits - one user can't exhaust quota for others
+- Better abuse prevention and scalability
+- Support for tiered plans (free/pro/enterprise)
+
+### Helper Package
+
+Install the official rate limiting package:
+
+```bash
+npm install @doclehq/rate-limit ioredis
+# or for edge/serverless
+npm install @doclehq/rate-limit @upstash/redis
+```
+
+### Implementation with Redis
+
+Production-ready implementation using Redis with sliding window algorithm:
+
+```typescript
+// lib/rate-limit.ts
+import Redis from 'ioredis';
+import { createRedisRateLimiter } from '@doclehq/rate-limit';
+
+const redis = new Redis(process.env.REDIS_URL);
+const limiter = createRedisRateLimiter(redis);
+
+export async function checkUserRateLimit(userId: string) {
+  return limiter.check({
+    userId,
+    limit: 100,      // 100 requests
+    windowMs: 60000  // per minute
+  });
+}
+
+// app/api/docle/route.ts (Next.js)
+import { getServerSession } from 'next-auth';
+import { checkUserRateLimit } from '@/lib/rate-limit';
+
+export async function POST(req: Request) {
+  const { code, lang, policy } = await req.json();
+  
+  // Authenticate user
+  const session = await getServerSession();
+  if (!session?.user?.id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // Check per-user rate limit
+  const rateLimit = await checkUserRateLimit(session.user.id);
+  
+  if (!rateLimit.success) {
+    return Response.json({ 
+      error: 'Rate limit exceeded',
+      remaining: rateLimit.remaining,
+      reset: rateLimit.reset
+    }, { 
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': rateLimit.limit.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.reset.toISOString()
+      }
+    });
+  }
+  
+  // Proxy to Docle
+  const result = await fetch('https://api.docle.co/api/run', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ 
+      code, 
+      lang, 
+      policy,
+      userContext: {              // Track per-user in Docle
+        id: session.user.id,
+        email: session.user.email,
+        tier: session.user.tier
+      }
+    })
+  });
+  
+  return Response.json(await result.json(), {
+    headers: {
+      'X-RateLimit-Limit': rateLimit.limit.toString(),
+      'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+      'X-RateLimit-Reset': rateLimit.reset.toISOString()
+    }
+  });
+}
+```
+
+### Implementation with Upstash (Edge/Serverless)
+
+Perfect for Vercel Edge Functions, Cloudflare Workers, and other serverless environments:
+
+```typescript
+// lib/rate-limit.ts
+import { Redis } from '@upstash/redis';
+import { createUpstashRateLimiter } from '@doclehq/rate-limit';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const limiter = createUpstashRateLimiter(redis);
+
+// app/api/docle/route.ts
+export async function POST(req: Request) {
+  const session = await getServerSession();
+  if (!session?.user?.id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // Check rate limit
+  const rateLimit = await limiter.check({
+    userId: session.user.id,
+    limit: 100,
+    windowMs: 60000
+  });
+  
+  if (!rateLimit.success) {
+    return Response.json({ 
+      error: 'Rate limit exceeded',
+      reset: rateLimit.reset
+    }, { status: 429 });
+  }
+  
+  // ... rest of proxy logic
+}
+```
+
+### Implementation with In-Memory (Development)
+
+For local development without Redis dependency:
+
+```typescript
+// lib/rate-limit.ts
+import { createMemoryRateLimiter } from '@doclehq/rate-limit';
+
+const limiter = createMemoryRateLimiter();
+
+export async function checkUserRateLimit(userId: string) {
+  return limiter.check({
+    userId,
+    limit: 100,
+    windowMs: 60000
+  });
+}
+```
+
+**⚠️ Warning:** In-memory limiter is for development only. Data is lost on process restart and not shared across instances.
+
+### Tiered Rate Limiting
+
+Different limits for different user subscription tiers:
+
+```typescript
+import { createTieredRateLimiter, createRedisRateLimiter } from '@doclehq/rate-limit';
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+const baseLimiter = createRedisRateLimiter(redis);
+
+const limiter = createTieredRateLimiter(baseLimiter, {
+  free: { requests: 100, windowMs: 60000 },       // 100/min
+  pro: { requests: 1000, windowMs: 60000 },       // 1000/min
+  enterprise: { requests: 10000, windowMs: 60000 } // 10000/min
+});
+
+// In your API route
+export async function POST(req: Request) {
+  const session = await getServerSession();
+  
+  const rateLimit = await limiter.check({
+    userId: session.user.id,
+    tier: session.user.tier || 'free'
+  });
+  
+  if (!rateLimit.success) {
+    return Response.json({ 
+      error: 'Rate limit exceeded',
+      upgrade_url: '/pricing' // Prompt upgrade
+    }, { status: 429 });
+  }
+  
+  // ... rest of logic
+}
+```
+
+### Manual Implementation (Without Package)
+
+If you prefer to implement rate limiting yourself:
+
+```typescript
+// lib/rate-limit.ts
+import { Redis } from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+export async function checkUserRateLimit({
+  userId,
+  limit = 100,
+  windowMs = 60000
+}: {
+  userId: string;
+  limit?: number;
+  windowMs?: number;
+}) {
+  const key = `rate-limit:user:${userId}`;
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  // Add current request timestamp
+  await redis.zadd(key, now, `${now}`);
+  
+  // Remove old entries outside the window
+  await redis.zremrangebyscore(key, 0, windowStart);
+  
+  // Count requests in current window
+  const count = await redis.zcard(key);
+  
+  // Set expiry
+  await redis.expire(key, Math.ceil(windowMs / 1000));
+  
+  const remaining = Math.max(0, limit - count);
+  const success = count <= limit;
+  
+  return {
+    success,
+    remaining,
+    limit,
+    reset: new Date(now + windowMs)
+  };
+}
+```
+
+### Rate Limit Headers
+
+Return standard rate limit headers to clients:
+
+```typescript
+import { createRateLimitHeaders } from '@doclehq/rate-limit';
+
+const rateLimit = await limiter.check({ userId: 'user_123' });
+const headers = createRateLimitHeaders(rateLimit);
+
+return Response.json(data, { headers });
+// X-RateLimit-Limit: 100
+// X-RateLimit-Remaining: 95
+// X-RateLimit-Reset: 2025-01-27T12:00:00.000Z
+```
+
+### Next.js Middleware
+
+Apply rate limiting to all API routes using middleware:
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { createRedisRateLimiter, createRateLimitHeaders } from '@doclehq/rate-limit';
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+const limiter = createRedisRateLimiter(redis);
+
+export async function middleware(request: NextRequest) {
+  const session = await getSession(request);
+  
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  const result = await limiter.check({
+    userId: session.user.id,
+    limit: 100,
+    windowMs: 60000
+  });
+  
+  if (!result.success) {
+    return NextResponse.json({ 
+      error: 'Rate limit exceeded' 
+    }, { 
+      status: 429,
+      headers: createRateLimitHeaders(result)
+    });
+  }
+  
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/api/docle/:path*'
+};
+```
+
+### See Also
+
+- **[@doclehq/rate-limit README](packages/rate-limit/README.md)** - Full API documentation
+- **[User Context Tracking](#user-context-tracking)** - Track per-user usage in Docle
+- **[Usage Analytics](#usage-analytics)** - View per-user analytics in dashboard
+
+---
+
+## User Context Tracking
+
+Track which users are running code by passing optional `userContext` to Docle's API. This enables per-user analytics in your dashboard and better debugging.
+
+### Schema
+
+```typescript
+interface UserContext {
+  id: string;                              // Required: User identifier
+  email?: string;                          // Optional: For display
+  name?: string;                           // Optional: For display
+  tier?: 'free' | 'pro' | 'enterprise';    // Optional: For analytics
+  metadata?: Record<string, unknown>;      // Optional: Custom data
+}
+```
+
+### Backend API
+
+Pass `userContext` when calling Docle's API:
+
+```typescript
+// Server proxy
+const result = await fetch('https://api.docle.co/api/run', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    code,
+    lang,
+    policy: { timeoutMs: 5000 },
+    userContext: {                         // NEW: Optional user context
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      tier: session.user.tier,
+      metadata: {
+        orgId: session.user.orgId,
+        source: 'web-app'
+      }
+    }
+  })
+});
+```
+
+### SDK
+
+Using `@doclehq/sdk`:
+
+```typescript
+import { runSandbox } from '@doclehq/sdk';
+
+const result = await runSandbox(code, {
+  lang: 'python',
+  apiKey: process.env.DOCLE_API_KEY,
+  userContext: {
+    id: session.user.id,
+    email: session.user.email,
+    tier: session.user.tier
+  }
+});
+```
+
+### React
+
+Using `@doclehq/react`:
+
+```tsx
+import { useDocle } from '@doclehq/react';
+
+function MyEditor() {
+  const session = useSession();
+  
+  const { run, result, loading } = useDocle({
+    endpoint: '/api/docle',
+    userContext: {
+      id: session.user.id,
+      email: session.user.email,
+      tier: session.user.tier
+    }
+  });
+  
+  // Or pass per-execution:
+  await run(code, {
+    lang: 'python',
+    userContext: { id: 'user_123' }
+  });
+}
+```
+
+### Vue
+
+Using `@doclehq/vue`:
+
+```vue
+<script setup>
+import { useDocle } from '@doclehq/vue';
+
+const session = useAuth();
+
+const { run, result, loading } = useDocle({
+  endpoint: '/api/docle',
+  userContext: {
+    id: session.user.id,
+    email: session.user.email,
+    tier: session.user.tier
+  }
+});
+</script>
+```
+
+### Benefits
+
+- **Per-user analytics** - See which users are running code in your dashboard
+- **Better debugging** - Track execution history per user
+- **Usage insights** - Identify power users and usage patterns
+- **Tiered limits** - Combine with per-user rate limiting for fair usage
+- **Compliance** - Audit trails for security and compliance
+
+### Privacy
+
+- `userContext` is optional and not required for code execution
+- Data is stored only for analytics and debugging
+- You control what data to send (e.g., hashed IDs for privacy)
+- Fully backward compatible - existing code works without changes
 
 ---
 

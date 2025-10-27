@@ -21,7 +21,7 @@ export function useDocle(options?: UseDocleOptions) {
   const run = async (code: string, opts: RunOptions): Promise<RunResponse> => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const res = await runSandbox(code, {
         ...opts,

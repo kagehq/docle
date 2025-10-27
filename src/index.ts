@@ -539,7 +539,7 @@ app.post("/api/run", async (c) => {
     // If userContext is provided, track per-user usage
     const userId = userContext?.id || null;
     const userEmail = userContext?.email || null;
-    
+
     await trackUsage(c.env, project.id, userId, lang, code, status, exec.exitCode, executionTimeMs, userEmail);
 
     return c.json(result);

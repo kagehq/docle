@@ -8,9 +8,9 @@ export type UserContext = {
   metadata?: Record<string, unknown>;
 };
 
-export type RunOptions = { 
-  lang: "python" | "node"; 
-  policy?: Policy; 
+export type RunOptions = {
+  lang: "python" | "node";
+  policy?: Policy;
   endpoint?: string;
   apiKey?: string; // Optional API key for authenticated access
   userContext?: UserContext; // Optional user context for per-user tracking
