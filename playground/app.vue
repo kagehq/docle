@@ -1,7 +1,25 @@
+<script setup lang="ts">
+import { ref, provide } from 'vue'
+
+const isSnippetsPanelOpen = ref(false)
+
+const openSnippetsPanel = () => {
+  isSnippetsPanelOpen.value = true
+}
+
+const closeSnippetsPanel = () => {
+  isSnippetsPanelOpen.value = false
+}
+
+// Provide the function to children components
+provide('openSnippetsPanel', openSnippetsPanel)
+</script>
+
 <template>
   <div>
     <NuxtPage />
     <ToastContainer />
+    <SnippetsPanel :is-open="isSnippetsPanelOpen" @close="closeSnippetsPanel" />
   </div>
 </template>
 

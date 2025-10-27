@@ -15,21 +15,33 @@ preview_id = "d98d0473a4f34491a4c96a9f1e56afd9"
 [[d1_databases]]
 binding = "DB"
 database_name = "docle-db"
-database_id = "YOUR_D1_DATABASE_ID_HERE"  # Replace with actual ID
+database_id = "c112bafc-9782-44be-8e29-ea4979843c14"
 
+# Default environment (local development)
 [vars]
 APP_NAME = "Docle"
-APP_URL = "http://localhost:3001"  # Frontend URL - Update for production (e.g. "https://app.docle.co")
+APP_URL = "http://localhost:3001"
 
 # ============================================================================
 # Email Configuration (Magic Links)
 # ============================================================================
 # For local dev: Leave these commented out and magic links will print to terminal
-# For production: Uncomment and add your Resend API key
+# For production: Set via wrangler secret or in production environment below
 #
 # Get your API key from: https://resend.com/api-keys
-# RESEND_API_KEY = "re_..."
-# EMAIL_FROM = "Docle <onboarding@docle.co>"  # Must be a verified domain in Resend
+# RESEND_API_KEY = "re_..."  # Better: use `npx wrangler secret put RESEND_API_KEY --env production`
+# EMAIL_FROM = "Docle <noreply@docle.co>"
+
+# ============================================================================
+# Production Environment
+# ============================================================================
+# Deploy to production: npx wrangler deploy --env production
+# Set secrets: npx wrangler secret put RESEND_API_KEY --env production
+[env.production]
+[env.production.vars]
+APP_URL = "https://app.docle.co"  # Update with your production frontend URL
+EMAIL_FROM = "Docle <noreply@docle.co>"  # Update with your verified domain
+# RESEND_API_KEY should be set via: npx wrangler secret put RESEND_API_KEY --env production
 
 # ============================================================================
 # ADVANCED: Cloudflare Sandbox with Containers (Optional - Not currently used)
@@ -58,6 +70,11 @@ APP_URL = "http://localhost:3001"  # Frontend URL - Update for production (e.g. 
 
 # [observability]
 # enabled = true
+
+# Durable Object migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["CollabSession"]
 
 # Durable Object binding for Collaborative Sessions
 [[durable_objects.bindings]]

@@ -57,7 +57,7 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 - ✅ Multi-file project execution
 - ✅ Third-party package installation (pip/npm)
 - ✅ Custom entrypoint selection
-- ✅ Configurable timeout, memory, and network policies
+- ✅ Configurable timeout policies
 - ✅ Execution history and replay
 - ✅ Real-time collaborative editing
 
@@ -1304,9 +1304,9 @@ Docle uses [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) - a 
 ###  How Isolation Works
 
 1. **V8 Isolates** - Each execution runs in a separate V8 isolate
-2. **No Network Access** - Network disabled by default (configurable)
+2. **No Network Access** - Network is disabled (sandboxed environment)
 3. **No Filesystem Access** - Only sandbox workspace is accessible
-4. **Resource Limits** - Configurable timeout and memory limits
+4. **Resource Limits** - Configurable timeout limits
 5. **Process Isolation** - Execution cannot access Workers runtime or other executions
 
 ### What's Blocked
@@ -1328,11 +1328,11 @@ Docle uses [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) - a 
 
 ### Security Best Practices
 
-1. **Always use timeouts** - Prevent infinite loops
-2. **Limit memory** - Prevent memory exhaustion
-3. **Disable network** - Unless absolutely necessary
-4. **Validate output** - Sanitize stdout/stderr before displaying
-5. **Rate limiting** - Implement on your end if needed
+1. **Always use timeouts** - Prevent infinite loops (configurable via `policy.timeoutMs`)
+2. **Validate output** - Sanitize stdout/stderr before displaying to users
+3. **Implement rate limiting** - Use per-user rate limits in your server proxy
+4. **Use API key restrictions** - Set domain whitelists and rate limits per key
+5. **Monitor usage** - Track executions and watch for anomalies
 
 ---
 
@@ -1696,18 +1696,18 @@ Give your AI agents the ability to write and execute code.
 **Features you need:**
 - REST API ✓
 - Package installation ✓
-- Network access (optional) ✓
 - Fast execution ✓
+- Secure isolation ✓
 
 **Example:**
 
 ```python
 # AI agent workflow
-user_query = "Fetch weather for San Francisco"
-ai_generates_code = generate_code(user_query)
+user_query = "Analyze this CSV data and show top 5 values"
+ai_generates_code = generate_code(user_query, user_data)
 result = await runSandbox(ai_generated_code, {
   lang: 'python',
-  packages: { packages: ['requests'] },
+  packages: { packages: ['pandas', 'numpy'] },
   policy: { timeoutMs: 10000 }
 })
 show_result_to_user(result.stdout)
@@ -1731,51 +1731,168 @@ Build interactive documentation or demo sites.
 - Beautiful UI ✓
 - Framework components ✓
 
-### 6. API Testing Tools
+### 6. Data Processing Tools
 
-Execute API requests and process responses.
+Process, transform, and analyze data in isolated environments.
 
 **Features you need:**
-- Network access ✓
 - Package installation ✓
 - JSON processing ✓
+- Multi-file projects ✓
 
 ---
 
 ## Deployment Guide
 
+Docle can be deployed in three ways: **Local Development**, **Self-Hosted**, or using our **Cloud Service**.
+
+---
+
 ### Local Development
 
+Run Docle locally for development and testing.
+
+#### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+
+#### Quick Start
+
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/kagehq/docle.git
 cd docle
 
 # Install dependencies
 npm install
+
+# Install playground dependencies
 cd playground && npm install && cd ..
 
-# Start both servers (API + Playground)
+# Start both backend and frontend
 ./start.sh
 ```
 
-**URLs:**
-- API: http://localhost:8787
-- Playground: http://localhost:3001
+#### Access Points
 
-**Note:** Cloudflare Sandbox only works in production. Local dev uses simulation mode.
+- **Backend API:** http://localhost:8787
+- **Frontend Dashboard:** http://localhost:3001
 
-### Production Deployment
+#### What's Included Locally
+
+- ✅ Full API with authentication
+- ✅ Dashboard UI for testing
+- ✅ Project & API key management
+- ✅ Code playground
+- ✅ Local D1 database (persisted)
+- ⚠️ Sandbox runs in **simulation mode** (real sandbox requires production deployment)
+
+#### Local Configuration
+
+**Environment:**
+- Backend: `wrangler.toml` (already configured for local dev)
+- Frontend: `playground/nuxt.config.ts` (proxies to backend)
+
+**Database Setup:**
+
+```bash
+# Initialize local D1 database
+npx wrangler d1 execute docle-db --file=./schema.sql --local
+
+# View users
+npx wrangler d1 execute docle-db --command "SELECT * FROM users" --local
+
+# View projects
+npx wrangler d1 execute docle-db --command "SELECT * FROM projects" --local
+
+# View API keys (hashed)
+npx wrangler d1 execute docle-db --command "SELECT id, project_id, key_prefix, name, rate_limit_per_minute FROM api_keys" --local
+```
+
+**Magic Links in Development:**
+- Magic links are **logged to the terminal** (not sent via email)
+- Watch the console output when requesting a login link
+- Click the link in terminal or copy to browser
+
+**Stopping Servers:**
+
+```bash
+./stop.sh  # Stops all Docle processes (backend + frontend)
+```
+
+**Restarting:**
+
+```bash
+./restart.sh  # Stops and restarts all services
+```
+
+---
+
+### Self-Hosted Deployment
+
+Deploy your own Docle instance on Cloudflare Workers.
+
+#### Why Self-Host?
+
+- **Full control** over infrastructure and data
+- **Custom compliance** requirements
+- **Private deployment** within your organization
+- **Custom domain** and branding
 
 #### Prerequisites
 
 1. [Cloudflare account](https://dash.cloudflare.com/sign-up)
 2. **Workers Paid Plan** ($5/month) - Required for:
-   - Cloudflare Sandbox
+   - Cloudflare Sandbox (real code execution)
    - Durable Objects (collaborative editing)
+   - D1 Database
    - Extended CPU time
 
-#### Step 1: Create KV Namespaces
+#### Step 1: Clone and Install
+
+```bash
+git clone https://github.com/kagehq/docle.git
+cd docle
+npm install
+```
+
+#### Step 2: Authenticate with Cloudflare
+
+```bash
+npx wrangler login
+```
+
+This opens a browser to authenticate with your Cloudflare account.
+
+#### Step 3: Create D1 Database
+
+```bash
+npx wrangler d1 create docle-db
+```
+
+Copy the **database ID** from the output. It looks like:
+```
+database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+Update `wrangler.toml`:
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "docle-db"
+database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"  # ← Paste your ID here
+```
+
+#### Step 4: Initialize Database Schema
+
+```bash
+npx wrangler d1 execute docle-db --file=./schema.sql
+```
+
+This creates all necessary tables: `users`, `projects`, `api_keys`, `sessions`, `magic_links`, and `usage`.
+
+#### Step 5: Create KV Namespace
 
 ```bash
 # Production
@@ -1785,26 +1902,36 @@ npx wrangler kv namespace create RUNS
 npx wrangler kv namespace create RUNS --preview
 ```
 
-Copy the generated IDs.
+Copy the **namespace IDs** from the output.
 
-#### Step 2: Update wrangler.toml
-
+Update `wrangler.toml`:
 ```toml
 [[kv_namespaces]]
 binding = "RUNS"
-id = "YOUR_PRODUCTION_ID"
-preview_id = "YOUR_PREVIEW_ID"
+id = "YOUR_PRODUCTION_ID"      # ← Paste production ID
+preview_id = "YOUR_PREVIEW_ID" # ← Paste preview ID
 ```
 
-#### Step 3: Enable Sandbox
+#### Step 6: Configure Environment (Optional)
 
-In `src/index.ts`, uncomment:
+For production email delivery (magic links), add to `wrangler.toml`:
 
-```typescript
-export { Sandbox } from '@cloudflare/sandbox';
+```toml
+[vars]
+APP_URL = "https://your-frontend-domain.com"  # Your frontend URL
+RESEND_API_KEY = "re_..."                     # Get from resend.com
+EMAIL_FROM = "auth@your-domain.com"           # Your sender email
 ```
 
-#### Step 4: Deploy
+**Without Resend configured:**
+- Magic links are logged to Cloudflare Workers logs
+- Users can't receive emails (manual copy required)
+
+**With Resend configured:**
+- Magic links are sent via email automatically
+- Production-ready authentication flow
+
+#### Step 7: Deploy Backend
 
 ```bash
 npm run deploy
@@ -1815,31 +1942,235 @@ Your worker will be live at:
 https://docle.YOUR-SUBDOMAIN.workers.dev
 ```
 
-#### Step 5: Custom Domain (Optional)
+Test it:
+```bash
+curl https://docle.YOUR-SUBDOMAIN.workers.dev
+# Should return: {"message":"Docle API","version":"2.0.0"}
+```
 
-1. Go to Workers Dashboard
-2. Navigate to your worker
+#### Step 8: Deploy Frontend (Optional)
+
+If you want the dashboard UI:
+
+**Update configuration:**
+
+Edit `playground/nuxt.config.ts`:
+```typescript
+runtimeConfig: {
+  public: {
+    apiUrl: 'https://docle.YOUR-SUBDOMAIN.workers.dev'  // Your worker URL
+  }
+}
+```
+
+**Build:**
+```bash
+cd playground
+npm run build
+```
+
+**Deploy to:**
+- **Vercel:** `vercel deploy`
+- **Netlify:** `netlify deploy`
+- **Cloudflare Pages:** `npx wrangler pages publish .output/public`
+
+#### Step 9: Custom Domain (Optional)
+
+**For Worker (API):**
+1. Go to Cloudflare Dashboard → Workers & Pages
+2. Select your `docle` worker
 3. Click "Triggers" → "Custom Domains"
-4. Add your domain (e.g., `api.your domain.com`)
+4. Click "Add Custom Domain"
+5. Enter your domain (e.g., `api.your-company.com`)
+6. Cloudflare configures DNS automatically
 
-### Environment Variables
+**For Frontend (Dashboard):**
+- Follow your hosting provider's custom domain setup
+- Update `APP_URL` in `wrangler.toml` to match
 
-Set via `wrangler.toml` or Cloudflare Dashboard:
+#### Step 10: Test Your Deployment
+
+```bash
+# Test API
+curl https://api.your-company.com
+
+# Request magic link
+curl -X POST https://api.your-company.com/auth/request \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com"}'
+
+# Run code (after getting API key from dashboard)
+curl -X POST https://api.your-company.com/api/run \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"print(\"Hello from self-hosted Docle!\")","lang":"python"}'
+```
+
+---
+
+### Using Your Self-Hosted Instance
+
+Point SDK/packages to your instance instead of `api.docle.co`:
+
+#### TypeScript SDK
+
+```typescript
+import { runSandbox } from '@doclehq/sdk';
+
+const result = await runSandbox(code, {
+  lang: 'python',
+  endpoint: 'https://api.your-company.com',  // Your instance
+  apiKey: 'your_api_key'
+});
+```
+
+#### React
+
+```tsx
+import { useDocle } from '@doclehq/react';
+
+function Editor() {
+  const { run } = useDocle({ 
+    endpoint: 'https://api.your-company.com'  // Your instance
+  });
+  
+  // Use normally...
+}
+```
+
+#### Vue
+
+```vue
+<script setup>
+import { useDocle } from '@doclehq/vue';
+
+const { run } = useDocle({ 
+  endpoint: 'https://api.your-company.com'  // Your instance
+});
+</script>
+```
+
+#### CDN Embed
+
+```html
+<script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
+<script>
+  // Override default endpoint
+  window.docleEndpoint = 'https://api.your-company.com';
+  window.docleApiKey = 'your_api_key';
+</script>
+
+<div data-docle data-lang="python">
+print("Hello!")
+</div>
+```
+
+---
+
+### Monitoring & Maintenance
+
+#### View Logs
+
+**Cloudflare Dashboard:**
+1. Workers & Pages → Select your worker
+2. **Logs** tab: Real-time execution logs
+3. Filter by time, status code, or search text
+
+**Tail logs in terminal:**
+```bash
+npx wrangler tail
+```
+
+#### Analytics
+
+**Cloudflare Dashboard:**
+- **Analytics** tab shows:
+  - Request volume
+  - Error rates
+  - P50/P95/P99 latency
+  - CPU time usage
+  - Geographic distribution
+
+**Docle Dashboard:**
+- Per-project usage metrics
+- Execution history
+- API key activity
+- Success rates
+
+#### Database Maintenance
+
+**Backup database:**
+```bash
+# Export to SQL
+npx wrangler d1 export docle-db --output=backup.sql
+```
+
+**View database size:**
+```bash
+npx wrangler d1 execute docle-db --command "SELECT 
+  (SELECT COUNT(*) FROM users) as users,
+  (SELECT COUNT(*) FROM projects) as projects,
+  (SELECT COUNT(*) FROM api_keys) as api_keys,
+  (SELECT COUNT(*) FROM usage) as total_runs"
+```
+
+**Clean up old usage data:**
+```bash
+# Delete usage records older than 30 days
+npx wrangler d1 execute docle-db --command "
+  DELETE FROM usage 
+  WHERE created_at < datetime('now', '-30 days')
+"
+```
+
+#### Updating Your Deployment
+
+```bash
+# Pull latest changes
+git pull origin main
+
+# Install new dependencies (if any)
+npm install
+
+# Deploy
+npm run deploy
+```
+
+#### Environment Variables
+
+Set via `wrangler.toml` or Cloudflare Dashboard (Settings → Variables):
 
 ```toml
 [vars]
 ENVIRONMENT = "production"
-MAX_TIMEOUT_MS = "300000"
+APP_URL = "https://app.your-company.com"
+RESEND_API_KEY = "re_..."
+EMAIL_FROM = "auth@your-company.com"
 ```
 
-### Monitoring
+#### Cost Estimation
 
-View logs and metrics in the Cloudflare Dashboard:
+**Cloudflare Workers:**
+- $5/month for Paid plan
+- First 10 million requests free
+- $0.50 per additional million requests
+- First 400,000 GB-s CPU time free
+- $12.50 per additional million GB-s
 
-1. Workers & Pages
-2. Select your worker
-3. Logs tab (real-time logs)
-4. Analytics tab (usage metrics)
+**D1 Database:**
+- First 5 GB storage free
+- First 25 billion read requests free
+- First 50 million write requests free
+
+**KV:**
+- First 100,000 reads/day free
+- First 1,000 writes/day free
+- $0.50 per million additional reads
+- $5.00 per million additional writes
+
+**Typical usage for small-to-medium deployment:**
+- ~$5-10/month total
+- Can scale to millions of executions
 
 ---
 
@@ -2215,15 +2546,12 @@ Collaborative editing requires:
 
 **Issue:** Code can't make HTTP requests
 
-**Solution:** Enable network access:
+**Cause:** Network access is disabled in the sandbox environment for security.
 
-```json
-{
-  "policy": {
-    "timeoutMs": 15000  // Allow time for operations
-  }
-}
-```
+**Solution:** Network requests are not currently supported. The sandbox runs in an isolated environment without network access. If you need to make API calls:
+- Execute them on your backend server
+- Pass the results to the sandbox code as input
+- Or use a different execution environment
 
 #### 5. Collaborative Editing Not Working
 
@@ -2243,15 +2571,14 @@ class_name = "CollabSession"
 
 **Issue:** Code crashes or returns empty output
 
-**Solution:** Increase memory limit:
+**Cause:** The sandbox has fixed memory limits set at the platform level.
 
-```json
-{
-  "policy": {
-    "timeoutMs": 30000  // Increase timeout for heavy operations
-  }
-}
-```
+**Solutions:**
+- Optimize your code to use less memory
+- Process data in smaller chunks
+- Reduce the size of data structures
+- Avoid loading large files into memory at once
+- Consider streaming or incremental processing
 
 #### 7. Import Errors (Multi-File)
 

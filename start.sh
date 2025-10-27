@@ -19,19 +19,17 @@ else
 fi
 sleep 1
 
-# Clean up local storage to avoid migration issues
-echo "🧹 Cleaning local storage..."
-rm -rf .wrangler/state 2>/dev/null
-
-# Check if D1 database is initialized
+# Check if D1 database is initialized (first time setup only)
 if [ ! -f ".wrangler/state/v3/d1/miniflare-D1DatabaseObject" ]; then
-  echo "🗄️  Initializing D1 database..."
+  echo "🗄️  Initializing D1 database (first time setup)..."
   if [ -f "schema.sql" ]; then
     npx wrangler d1 execute DB --local --file=schema.sql > /dev/null 2>&1
     echo "  ✓ Database initialized"
   else
     echo "  ⚠️  Warning: schema.sql not found"
   fi
+else
+  echo "✓ Using existing D1 database"
 fi
 
 # Build embed.js if needed

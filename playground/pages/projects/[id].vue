@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { inject } from 'vue'
+
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
+
+// Inject the snippets panel function
+const openSnippetsPanel = inject<() => void>('openSnippetsPanel', () => {})
 
 const projectId = route.params.id as string
 
@@ -200,7 +205,7 @@ watch(activeTab, (newTab) => {
 <template>
   <div class="min-h-screen bg-black text-white flex flex-col">
     <!-- Header -->
-    <AppHeader active-page="dashboard" />
+    <AppHeader active-page="dashboard" @open-snippets="openSnippetsPanel" />
 
     <!-- Main Content -->
     <div class="flex-1 overflow-y-auto px-6 py-6 max-w-7xl mx-auto w-full">

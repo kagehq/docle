@@ -374,7 +374,7 @@ export async function getProjectUsageStats(
 
   // Node.js runs
   const nodejsResult = await env.DB.prepare(
-    "SELECT COUNT(*) as nodejs_runs FROM usage WHERE project_id = ?1 AND language IN ('javascript', 'typescript')"
+    "SELECT COUNT(*) as nodejs_runs FROM usage WHERE project_id = ?1 AND language = 'node'"
   )
     .bind(projectId)
     .first<{ nodejs_runs: number }>();

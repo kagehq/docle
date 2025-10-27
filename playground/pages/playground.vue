@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 
 useHead({
   title: 'Playground - Docle'
 })
+
+// Inject the snippets panel function
+const openSnippetsPanel = inject<() => void>('openSnippetsPanel', () => {})
 
 const route = useRoute()
 
@@ -730,7 +733,7 @@ const getStatusColor = () => {
 
     <div class="relative flex-1 flex flex-col overflow-hidden">
       <!-- Header -->
-      <AppHeader active-page="playground">
+      <AppHeader active-page="playground" @open-snippets="openSnippetsPanel">
         <template #actions>
           <!-- Collab Status Banner -->
           <Transition name="slide-down">

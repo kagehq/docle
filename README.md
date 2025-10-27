@@ -14,133 +14,80 @@ But running untrusted code is scary. Docle makes it safe and simple.
 
 ## What you get
 
-- **Fast** - Runs on Cloudflare's edge network
+- **Fast** - Runs on Cloudflare's edge network (<50ms latency)
 - **Secure** - Isolated sandboxes, can't touch your infrastructure  
-- **Full-featured** - npm/pip packages, multi-file projects
+- **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
 - **Works everywhere** - React, Vue, vanilla JS, or REST API
 
-## Get started
+## Get Started
 
-### 1. Get an API key
+### Use Cloud (Recommended)
 
-Sign up at [app.docle.co/login](https://app.docle.co/login) to get your free API key.
+Sign up at **[app.docle.co](https://app.docle.co)** - no setup required.
 
-### 2. Choose your integration
+1. Create a project
+2. Generate an API key
+3. Start building!
 
-**Server-side (Recommended):**
+**Features:** Free tier (100 req/min), dashboard, analytics, domain restrictions.
+
+### Self-Host
+
+Deploy your own instance on Cloudflare Workers. [**→ Guide**](DETAILED.md#deployment-guide)
+
+### Develop Locally
+
 ```bash
-npm install @doclehq/sdk     # For backend/API routes
+git clone https://github.com/kagehq/docle.git && cd docle
+npm install && cd playground && npm install && cd ..
+./start.sh  # API: localhost:8787, Dashboard: localhost:3001
 ```
 
-**With UI (React/Vue):**
-```bash
-npm install @doclehq/react   # React components + hooks
-npm install @doclehq/vue     # Vue components + composables
-```
+[**→ Full local setup guide**](DETAILED.md#deployment-guide)
 
-**Quick test (CDN):**
-```html
-<script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
-```
+---
 
-## Secure Integration (Recommended)
+## Quick Example
 
-### React with Server Proxy
+### Server-side (Recommended)
 
-**Step 1: Create a server endpoint**
+Keep your API key secure by proxying through your backend:
 
 ```typescript
-// app/api/docle/route.ts (Next.js App Router)
-import { NextResponse } from 'next/server';
-
+// app/api/docle/route.ts (Next.js)
 export async function POST(req: Request) {
-  const { code, lang, policy } = await req.json();
+  const { code, lang } = await req.json();
   
-  // Your API key stays server-side!
-  const result = await fetch('https://api.docle.co/api/run', {
+  return fetch('https://api.docle.co/api/run', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ code, lang, policy })
+    body: JSON.stringify({ code, lang })
   });
-  
-  return NextResponse.json(await result.json());
 }
 ```
 
-**Step 2: Use the hook in your component**
-
 ```tsx
+// Your component
 import { useDocle } from '@doclehq/react';
 
-function MyEditor() {
-  // Points to YOUR server, not Docle API
-  const { run, result, loading } = useDocle({ 
-    endpoint: '/api/docle'  // Your server endpoint
-  });
+function Editor() {
+  const { run, result, loading } = useDocle({ endpoint: '/api/docle' });
   
-  const [code, setCode] = useState('print("Hello!")');
-
   return (
-    <div>
-      <textarea value={code} onChange={(e) => setCode(e.target.value)} />
-      <button onClick={() => run(code, { lang: 'python' })} disabled={loading}>
-        Run
+    <>
+      <button onClick={() => run('print("Hello!")', { lang: 'python' })}>
+        Run Code
       </button>
       {result && <pre>{result.stdout}</pre>}
-    </div>
+    </>
   );
 }
 ```
 
-### Vue with Server Proxy
-
-**Step 1: Create a server endpoint**
-
-```typescript
-// server/api/docle/run.post.ts (Nuxt 3)
-export default defineEventHandler(async (event) => {
-  const { code, lang, policy } = await readBody(event);
-  
-  // Your API key stays server-side!
-  return await $fetch('https://api.docle.co/api/run', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: { code, lang, policy }
-  });
-});
-```
-
-**Step 2: Use the composable**
-
-```vue
-<script setup>
-import { ref } from 'vue';
-import { useDocle } from '@doclehq/vue';
-
-const { run, result, loading } = useDocle({ 
-  endpoint: '/api/docle/run'  // Your server endpoint
-});
-const code = ref('print("Hello!")');
-</script>
-
-<template>
-  <div>
-    <textarea v-model="code" />
-    <button @click="run(code, { lang: 'python' })" :disabled="loading">
-      Run
-    </button>
-    <pre v-if="result">{{ result.stdout }}</pre>
-  </div>
-</template>
-```
-
-### REST API (Server-side)
+### Direct API
 
 ```bash
 curl -X POST https://api.docle.co/api/run \
@@ -149,111 +96,64 @@ curl -X POST https://api.docle.co/api/run \
   -d '{"code": "print(\"Hello!\")", "lang": "python"}'
 ```
 
-**Response:**
-```json
-{
-  "ok": true,
-  "exitCode": 0,
-  "stdout": "Hello!\n",
-  "stderr": ""
-}
+---
+
+## Installation
+
+```bash
+# Choose what you need
+npm install @doclehq/sdk        # TypeScript SDK (server-side)
+npm install @doclehq/react      # React hooks + components
+npm install @doclehq/vue        # Vue composables + components
+npm install @doclehq/rate-limit # Per-user rate limiting helper
 ```
 
-### TypeScript SDK (Server-side)
-
-```typescript
-import { runSandbox } from '@doclehq/sdk';
-
-const result = await runSandbox('print("Hello!")', {
-  lang: 'python',
-  apiKey: process.env.DOCLE_API_KEY
-});
-
-console.log(result.stdout); // "Hello!"
-```
-
-## Alternative: Direct API Usage
-
-> **Security Warning**  
-> The patterns below expose your API key client-side. Only use these if:
-> - You've set up domain restrictions in your dashboard
-> - You understand the security implications
-> - You're prototyping/testing
-
-### React Component (with domain restrictions)
-
-```tsx
-import { DoclePlayground } from '@doclehq/react';
-
-<DoclePlayground 
-  lang="python"
-  code="print('Hello!')"
-  apiKey="sk_live_YOUR_KEY"
-  onRun={(result) => console.log(result)}
-/>
-```
-
-### Vue Component (with domain restrictions)
-
-```vue
-<script setup>
-import { DoclePlayground } from '@doclehq/vue';
-</script>
-
-<template>
-  <DoclePlayground 
-    lang="python"
-    code="print('Hello!')"
-    api-key="sk_live_YOUR_KEY"
-  />
-</template>
-```
-
-### CDN Embed (with domain restrictions)
-
+**CDN (quick test):**
 ```html
 <script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
-<script>
-  window.docleApiKey = 'sk_live_YOUR_KEY';
-</script>
-
-<div data-docle data-lang="python">
-print("Hello!")
-</div>
+<div data-docle data-lang="python">print("Hello!")</div>
 ```
-
-## Self-Hosted Docle
-
-If you deploy your own Docle instance, use the `endpoint` option to point to it:
-
-```typescript
-const { run } = useDocle({ 
-  endpoint: 'https://docle.yourcompany.com'  // Your self-hosted instance
-});
-
-await run(code, { 
-  lang: 'python',
-  apiKey: 'your_key'  // Your self-hosted API key
-});
-```
-
-## Security
-
-**Use server proxies in production** - Keep API keys on your server, not in client code.
-**Set domain restrictions** - In your dashboard, limit which domains can use each API key.
-**Monitor usage** - Check your dashboard for analytics and unusual activity.
-
-## Examples
-
-Check out [examples/](examples/) for working demos of secure integration patterns.
-
-## Documentation
-
-- **[DETAILED.md](DETAILED.md)** - Complete API reference, advanced features, per-user rate limiting
-- **[React Package](packages/react/README.md)** - React hooks and components
-- **[Vue Package](packages/vue/README.md)** - Vue composables and components
-- **[TypeScript SDK](sdk/README.md)** - Direct API integration
 
 ---
 
-FSL-1.1-MIT License • Built with [Cloudflare Workers](https://workers.cloudflare.com)
+## Security
+
+✅ **Use server proxies** - Keep API keys server-side  
+✅ **Set domain restrictions** - Whitelist allowed origins in dashboard  
+✅ **Implement per-user rate limiting** - Prevent quota exhaustion  
+✅ **Monitor usage** - Track executions in your dashboard  
+
+[**→ Complete security guide**](DETAILED.md#security--sandboxing)
+
+---
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| **[DETAILED.md](DETAILED.md)** | Complete API reference, authentication, rate limiting, analytics |
+| **[React](packages/react/README.md)** | React hooks and components |
+| **[Vue](packages/vue/README.md)** | Vue composables and components |
+| **[SDK](sdk/README.md)** | TypeScript SDK for direct API integration |
+| **[Rate Limit](packages/rate-limit/README.md)** | Per-user rate limiting helper |
+| **[Examples](examples/)** | Working code examples |
+
+---
+
+## Advanced Features
+
+- **Usage analytics** - Detailed execution history and metrics  
+- **Rate limiting** - Per-API-key limits (1-10,000 req/min)
+- **Domain restrictions** - Whitelist origins per key
+- **User tracking** - Track which users run what code
+- **Collaboration** - Real-time multi-user editing
+- **Package support** - Install npm/pip packages on-the-fly
+- **Multi-file projects** - Full project execution with imports
+
+[**→ See all features**](DETAILED.md)
+
+---
+
+## License
+
+FSL-1.1-MIT • Built with [Cloudflare Sandbox](https://sandbox.cloudflare.com)

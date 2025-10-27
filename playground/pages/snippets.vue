@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { DoclePlayground } from '@doclehq/vue'
 
 useHead({
   title: 'Integration Snippets - Docle'
 })
+
+// Inject the snippets panel function
+const openSnippetsPanel = inject<() => void>('openSnippetsPanel', () => {})
 
 const activeTab = ref<'cdn' | 'react' | 'vue' | 'iframe' | 'sdk' | 'proxy'>('cdn')
 
@@ -554,7 +557,7 @@ const previewDescription = computed(() => {
   <div class="h-screen bg-black text-white flex flex-col overflow-hidden">
     <div class="relative flex-1 flex flex-col overflow-hidden">
       <!-- Header -->
-      <AppHeader active-page="snippets" />
+      <AppHeader active-page="snippets" @open-snippets="openSnippetsPanel" />
 
       <!-- Content Area -->
       <div class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-8">

@@ -49,8 +49,14 @@ app.use("*", cors({
     // Allow development origins
     const devOrigins = ['http://localhost:3001', 'http://localhost:8787', 'http://127.0.0.1:3001'];
 
-    // Allow production origins (update these with your actual domains)
-    const prodOrigins = ['https://app.docle.co', 'https://docle.co', 'https://api.docle.co'];
+    // Allow production origins - UPDATE THESE WITH YOUR ACTUAL DOMAINS
+    const prodOrigins = [
+      'https://app.docle.co',     // Your frontend domain
+      'https://api.docle.co',     // Your API domain
+      'https://docle.co',         // Root domain (if needed)
+      // Example wildcards for subdomains (if needed):
+      // 'https://staging.docle.co',
+    ];
 
     const allowedOrigins = [...devOrigins, ...prodOrigins];
 

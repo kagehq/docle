@@ -11,6 +11,11 @@ const props = withDefaults(defineProps<Props>(), {
   hideActions: false
 })
 
+// Emit event for snippets panel
+const emit = defineEmits<{
+  openSnippets: []
+}>()
+
 // Check if user is authenticated
 const isAuthenticated = ref(false)
 const userEmail = ref<string>('')
@@ -145,8 +150,24 @@ onUnmounted(() => {
           <!-- Custom action buttons from slot -->
           <slot name="actions"></slot>
 
-          <!-- Separator only shown when both actions exist and user is authenticated -->
-          <span v-if="$slots.actions && isAuthenticated" class="text-gray-500/50 text-sm">|</span>
+          <!-- Separator only shown when both actions exist -->
+          <span v-if="$slots.actions" class="text-gray-500/50 text-sm">|</span>
+
+          <!-- Snippets button -->
+          <button
+            @click="emit('openSnippets')"
+            class="px-2.5 py-1.5 text-xs rounded-lg border border-gray-500/20 bg-gray-500/10 text-gray-300 font-medium transition-all hover:bg-gray-500/20 hover:text-white hover:border-gray-500/30"
+            title="View Integration Snippets">
+            <span class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+              </svg>
+              Snippets
+            </span>
+          </button>
+
+          <!-- Separator only shown when user is authenticated -->
+          <span v-if="isAuthenticated" class="text-gray-500/50 text-sm">|</span>
 
           <!-- Show user menu if authenticated -->
           <template v-if="isAuthenticated">
