@@ -455,8 +455,6 @@ Execute code in a secure sandbox.
   // Execution policy (all optional)
   "policy"?: {
     timeoutMs?: number;    // 100-300000, default: 3000
-    memoryMB?: number;     // 64-2048, default: 256
-    allowNet?: boolean;    // default: false
   }
 }
 ```
@@ -489,8 +487,6 @@ curl -X POST https://api.docle.co/api/run \
     "lang": "python",
     "policy": {
       "timeoutMs": 5000,
-      "memoryMB": 256,
-      "allowNet": false
     }
   }'
 ```
@@ -529,9 +525,7 @@ curl -X POST https://api.docle.co/api/run \
       "packages": ["lodash@4.17.21"]
     },
     "policy": {
-      "timeoutMs": 30000,
-      "memoryMB": 512,
-      "allowNet": false
+      "timeoutMs": 30000
     }
   }'
 ```
@@ -575,8 +569,6 @@ const result = await runSandbox('print("Hello, Docle!")', {
   lang: 'python',
   policy: {
     timeoutMs: 5000,
-    memoryMB: 256,
-    allowNet: false
   },
   endpoint: 'https://api.docle.co' // optional
 });
@@ -730,8 +722,6 @@ const handleRun = async () => {
     lang: 'python',
     policy: {
       timeoutMs: 5000,
-      memoryMB: 256,
-      allowNet: false
     }
   });
 };
@@ -870,7 +860,7 @@ Docle uses [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) - a 
 
 - ❌ Access to environment variables
 - ❌ Access to file system (outside workspace)
-- ❌ Network requests (unless `allowNet: true`)
+- ❌ Network requests
 - ❌ System calls
 - ❌ Access to other executions
 - ❌ Access to Workers bindings (KV, DO, R2, etc.)
@@ -881,7 +871,6 @@ Docle uses [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) - a 
 - ✅ Full Node.js standard library
 - ✅ Third-party packages (pip/npm)
 - ✅ File operations within `/workspace`
-- ✅ Network requests (if `allowNet: true`)
 - ✅ Multi-file project execution
 
 ### Security Best Practices
@@ -903,8 +892,6 @@ Fine-grained control over execution environment.
 ```typescript
 {
   timeoutMs: number;    // 100 - 300,000 (5 minutes)
-  memoryMB: number;     // 64 - 2,048 MB
-  allowNet: boolean;    // Enable network access
 }
 ```
 
@@ -927,72 +914,31 @@ Controls maximum execution time.
 }
 ```
 
-### Memory (memoryMB)
-
-Controls maximum memory allocation.
-
-- **Minimum:** 64 MB
-- **Maximum:** 2,048 MB (2 GB)
-- **Default:** 256 MB
-
-**Note:** Memory limits are enforced at the sandbox level.
-
-**Example:**
-
-```javascript
-{
-  "policy": {
-    "memoryMB": 512  // 512 MB
-  }
-}
-```
-
-### Network Access (allowNet)
-
-Controls network connectivity.
-
-- **Default:** `false` (disabled)
-- **When enabled:** Code can make HTTP/HTTPS requests
-
-**Example:**
-
-```javascript
-{
-  "code": "import requests\nr = requests.get('https://api.github.com')\nprint(r.status_code)",
-  "lang": "python",
-  "packages": { "packages": ["requests"] },
-  "policy": {
-    "allowNet": true,  // Required for network requests
-    "timeoutMs": 30000  // Allow time for network operations
-  }
-}
-```
-
 ### Recommended Policies by Use Case
 
 **Quick Scripts (default):**
 ```javascript
-{ timeoutMs: 3000, memoryMB: 256, allowNet: false }
+{ timeoutMs: 3000 }
 ```
 
 **Data Processing:**
 ```javascript
-{ timeoutMs: 30000, memoryMB: 1024, allowNet: false }
+{ timeoutMs: 30000 }
 ```
 
 **API Calls:**
 ```javascript
-{ timeoutMs: 15000, memoryMB: 512, allowNet: true }
+{ timeoutMs: 15000 }
 ```
 
 **Heavy Computation:**
 ```javascript
-{ timeoutMs: 60000, memoryMB: 2048, allowNet: false }
+{ timeoutMs: 60000 }
 ```
 
 **Educational/Untrusted Code:**
 ```javascript
-{ timeoutMs: 5000, memoryMB: 128, allowNet: false }
+{ timeoutMs: 5000 }
 ```
 
 ---
@@ -1309,7 +1255,7 @@ ai_generates_code = generate_code(user_query)
 result = await runSandbox(ai_generated_code, {
   lang: 'python',
   packages: { packages: ['requests'] },
-  policy: { allowNet: true, timeoutMs: 10000 }
+  policy: { timeoutMs: 10000 }
 })
 show_result_to_user(result.stdout)
 ```
@@ -1570,8 +1516,7 @@ Install third-party packages before execution.
     "packages": ["pandas==2.0.0", "requests"]
   },
   "policy": {
-    "timeoutMs": 60000,  // Allow time for installation
-    "memoryMB": 512
+    "timeoutMs": 60000  // Allow time for installation
   }
 }
 ```
@@ -1591,8 +1536,7 @@ Install third-party packages before execution.
     "packages": ["express@4.18.0", "lodash"]
   },
   "policy": {
-    "timeoutMs": 60000,
-    "memoryMB": 512
+    "timeoutMs": 60000
   }
 }
 ```
@@ -1792,7 +1736,6 @@ Collaborative editing requires:
 **Solutions:**
 - Check package name spelling
 - Increase `timeoutMs` to 60000+ (60 seconds)
-- For network-dependent packages, set `allowNet: true`
 - Use specific versions: `requests==2.31.0`
 
 **Example:**
@@ -1801,8 +1744,7 @@ Collaborative editing requires:
 {
   "packages": { "packages": ["requests==2.31.0"] },
   "policy": {
-    "timeoutMs": 60000,
-    "allowNet": true
+    "timeoutMs": 60000
   }
 }
 ```
@@ -1825,8 +1767,7 @@ Collaborative editing requires:
 ```json
 {
   "policy": {
-    "allowNet": true,
-    "timeoutMs": 15000  // Allow time for network operations
+    "timeoutMs": 15000  // Allow time for operations
   }
 }
 ```
@@ -1854,7 +1795,7 @@ class_name = "CollabSession"
 ```json
 {
   "policy": {
-    "memoryMB": 1024  // or 2048 for heavy operations
+    "timeoutMs": 30000  // Increase timeout for heavy operations
   }
 }
 ```

@@ -32,13 +32,13 @@ if (!code.value) {
 // Helper: Get friendly error message
 const getFriendlyError = (message: string): string => {
   if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
-    return '⏱️ Execution timed out. Try increasing the timeout or optimizing your code.'
+    return 'Execution timed out. Try increasing the timeout or optimizing your code.'
   }
   if (message.includes('fetch failed') || message.includes('NetworkError')) {
-    return '🌐 Connection failed. The API may be temporarily unavailable.'
+    return 'Connection failed. The API may be temporarily unavailable.'
   }
   if (message.includes('HTTP 50')) {
-    return '⚠️ Server error. The execution environment may be starting up (takes 5-10 seconds).'
+    return 'Server error. The execution environment may be starting up (takes 5-10 seconds).'
   }
   return `❌ ${message}`
 }
@@ -161,7 +161,7 @@ onMounted(() => {
     if (type === 'docle-set-apikey' && newApiKey) {
       // Parent provides API key
       apiKey.value = newApiKey
-      console.log('✅ API key received from parent')
+      console.log('API key received from parent')
     } else if (type === 'docle-run') {
       runCode()
     } else if (type === 'docle-set-code' && newCode) {

@@ -4,9 +4,7 @@ export const Lang = z.enum(["python", "node"]);
 export type Lang = z.infer<typeof Lang>;
 
 export const Policy = z.object({
-  timeoutMs: z.number().int().min(100).max(300000).default(3000),
-  memoryMB: z.number().int().min(64).max(2048).default(256),
-  allowNet: z.boolean().default(false)
+  timeoutMs: z.number().int().min(100).max(300000).default(3000)
 }).partial().default({});
 
 // Multi-file support

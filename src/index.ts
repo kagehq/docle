@@ -455,8 +455,6 @@ app.post("/api/run", async (c) => {
     const { code, files, entrypoint, packages, lang, policy: raw } = parsed.data;
     const policy = {
       timeoutMs: raw?.timeoutMs ?? 3000,
-      memoryMB: raw?.memoryMB ?? 256,
-      allowNet: raw?.allowNet ?? false,
     };
 
     // API key is required for all requests

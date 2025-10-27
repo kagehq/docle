@@ -179,8 +179,6 @@ interface DocleRunOptions {
   lang: 'python' | 'node';
   policy?: {
     timeoutMs?: number;
-    memoryMB?: number;
-    allowNet?: boolean;
   };
   endpoint?: string;             // Your server proxy endpoint
   apiKey?: string;               // ⚠️ Deprecated - Use server proxy

@@ -355,9 +355,7 @@ const result = await runSandbox(code, {
   lang: 'python',
   apiKey: process.env.DOCLE_API_KEY,
   policy: {
-    timeoutMs: 5000,      // Max 5 seconds
-    memoryMB: 512,        // Max 512MB RAM
-    allowNet: true        // Allow network access
+    timeoutMs: 5000       // Max 5 seconds
   }
 });
 

@@ -104,9 +104,7 @@ const handleRun = async () => {
   await run(code.value, {
     lang: 'python',
     policy: {
-      timeoutMs: 5000,
-      memoryMB: 256,
-      allowNet: false
+      timeoutMs: 5000
     }
   });
 };

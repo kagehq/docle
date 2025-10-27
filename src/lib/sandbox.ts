@@ -2,17 +2,15 @@ import { getSandbox } from '@cloudflare/sandbox';
 import type { Env } from './kv';
 import type { FileEntry } from './schema';
 
-type ExecResult = { 
-  stdout: string; 
-  stderr: string; 
-  exitCode: number; 
-  usage?: { cpuMs?: number; memMB?: number; durationMs?: number } 
+type ExecResult = {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  usage?: { cpuMs?: number; memMB?: number; durationMs?: number }
 };
 
-export type SandboxPolicy = { 
-  timeoutMs: number; 
-  memoryMB: number; 
-  allowNet: boolean 
+export type SandboxPolicy = {
+  timeoutMs: number;
 };
 
 export type SandboxRunOptions = {
@@ -29,26 +27,26 @@ export type SandboxRunOptions = {
 export async function runInSandbox(
   env: Env,
   options: SandboxRunOptions,
-  lang: "python" | "node", 
+  lang: "python" | "node",
   policy: SandboxPolicy,
   sessionId: string
 ): Promise<ExecResult> {
   const start = Date.now();
-  
+
   try {
     // Get sandbox instance for this session
     const sandbox = getSandbox(env.SANDBOX, sessionId);
-    
+
     // Multi-file or single-file mode
     let entrypoint = options.entrypoint;
-    
+
     if (options.files && options.files.length > 0) {
       // Multi-file mode: write all files
       for (const file of options.files) {
         const filepath = `/workspace/${file.path}`;
         await sandbox.writeFile(filepath, file.content);
       }
-      
+
       // Default entrypoint if not specified
       if (!entrypoint) {
         entrypoint = lang === "python" ? "main.py" : "main.js";
@@ -61,16 +59,16 @@ export async function runInSandbox(
     } else {
       throw new Error("No code or files provided");
     }
-    
+
     // Install packages if specified
     if (options.packages && options.packages.length > 0) {
       const installResult = await installPackages(
-        sandbox, 
-        lang, 
-        options.packages, 
+        sandbox,
+        lang,
+        options.packages,
         policy.timeoutMs
       );
-      
+
       if (installResult.exitCode !== 0) {
         return {
           stdout: installResult.stdout,
@@ -80,20 +78,20 @@ export async function runInSandbox(
         };
       }
     }
-    
+
     // Determine command based on language
     const filepath = `/workspace/${entrypoint}`;
-    const command = lang === "python" 
+    const command = lang === "python"
       ? `python3 ${filepath}`
       : `node ${filepath}`;
-    
+
     // Execute with timeout
     const result = await sandbox.exec(command, {
       timeout: policy.timeoutMs
     });
-    
+
     const durationMs = Date.now() - start;
-    
+
     return {
       stdout: result.stdout || "",
       stderr: result.stderr || "",
@@ -104,10 +102,10 @@ export async function runInSandbox(
         memMB: undefined
       }
     };
-    
+
   } catch (error: any) {
     const durationMs = Date.now() - start;
-    
+
     // Enhanced error logging
     console.error('Sandbox execution error:', {
       name: error?.name,
@@ -117,7 +115,7 @@ export async function runInSandbox(
       status: error?.status,
       response: error?.response
     });
-    
+
     return {
       stdout: "",
       stderr: `SandboxError: ${error?.message || String(error)}${error?.cause ? `\nCause: ${error.cause}` : ''}`,
@@ -141,13 +139,13 @@ async function installPackages(
       // Create requirements.txt
       const requirements = packages.join('\n');
       await sandbox.writeFile('/workspace/requirements.txt', requirements);
-      
+
       // Run pip install
       const result = await sandbox.exec(
         "pip3 install -r /workspace/requirements.txt --quiet",
         { timeout: Math.min(timeoutMs, 60000) } // Max 60s for installation
       );
-      
+
       return {
         stdout: result.stdout || "",
         stderr: result.stderr || "",
@@ -164,18 +162,18 @@ async function installPackages(
           return acc;
         }, {} as Record<string, string>)
       };
-      
+
       await sandbox.writeFile(
-        '/workspace/package.json', 
+        '/workspace/package.json',
         JSON.stringify(packageJson, null, 2)
       );
-      
+
       // Run npm install
       const result = await sandbox.exec(
         "npm install --silent",
         { timeout: Math.min(timeoutMs, 60000) }
       );
-      
+
       return {
         stdout: result.stdout || "",
         stderr: result.stderr || "",
@@ -197,35 +195,33 @@ async function installPackages(
  */
 export async function simulateExec(
   options: SandboxRunOptions,
-  lang: "python" | "node", 
+  lang: "python" | "node",
   policy: SandboxPolicy
 ): Promise<ExecResult> {
   const start = Date.now();
-  
+
   let stdout = "";
   let stderr = "";
   let exitCode = 0;
-  
-  if (policy.timeoutMs < 1) { 
-    stderr = "timeout"; 
-    exitCode = 124; 
+
+  if (policy.timeoutMs < 1) {
+    stderr = "timeout";
+    exitCode = 124;
   } else {
     // Simulate execution
     const code = options.code || options.files?.map(f => f.content).join('\n') || '';
     const fileInfo = options.files ? ` (${options.files.length} files)` : '';
-    const pkgInfo = options.packages && options.packages.length > 0 
-      ? `\n📦 Packages: ${options.packages.join(', ')}` 
+    const pkgInfo = options.packages && options.packages.length > 0
+      ? `\n Packages: ${options.packages.join(', ')}`
       : '';
-    
-    stdout = `✅ Docle Sandbox (Preview Mode)
+
+    stdout = `Docle Sandbox (Preview Mode)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📝 Language: ${lang}${fileInfo}${pkgInfo}
-⚡ Timeout: ${policy.timeoutMs}ms
-🔒 Memory: ${policy.memoryMB}MB
-🌐 Network: ${policy.allowNet ? 'Enabled' : 'Disabled'}
+Language: ${lang}${fileInfo}${pkgInfo}
+Timeout: ${policy.timeoutMs}ms
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-ℹ️  Sandbox is running in preview mode.
+Sandbox is running in preview mode.
 To enable real code execution:
 1. Request beta access: https://cloudflare.com/sandbox-beta
 2. Enable Containers in wrangler.toml
@@ -236,14 +232,14 @@ Your code will execute:
 ${code}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   }
-  
+
   const durationMs = Date.now() - start;
-  
-  return { 
-    stdout, 
-    stderr, 
-    exitCode, 
-    usage: { cpuMs: 0, memMB: 0, durationMs } 
+
+  return {
+    stdout,
+    stderr,
+    exitCode,
+    usage: { cpuMs: 0, memMB: 0, durationMs }
   };
 }
 

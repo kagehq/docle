@@ -47,13 +47,13 @@ const getPlaygroundKey = async () => {
       // New key created, store it
       playgroundApiKey.value = response.apiKey
       localStorage.setItem('docle_playground_key', response.apiKey)
-      console.log('✅ Playground API key created')
+      // console.log('✅ Playground API key created')
     } else if (response.keyPrefix) {
       // Key exists but we can't get it, check localStorage
       const storedKey = localStorage.getItem('docle_playground_key')
       if (storedKey) {
         playgroundApiKey.value = storedKey
-        console.log('✅ Using stored playground API key')
+        // console.log('✅ Using stored playground API key')
       } else {
         // Key exists but not in localStorage - user needs to get it from project page
         console.warn('⚠️ Playground API key exists but not available. Check your Playground project.')
@@ -87,8 +87,6 @@ const code = computed({
 // Settings
 const lang = ref<'python' | 'node'>('python')
 const timeout = ref(3000)
-const memory = ref(256)
-const allowNet = ref(false)
 
 // Packages
 const packages = ref<string[]>([])
@@ -107,8 +105,6 @@ const saveDraft = () => {
     activeFileIdx: activeFileIdx.value,
     lang: lang.value,
     timeout: timeout.value,
-    memory: memory.value,
-    allowNet: allowNet.value,
     packages: packages.value,
     timestamp: new Date().toISOString()
   }
@@ -135,8 +131,6 @@ const restoreDraft = () => {
       activeFileIdx.value = draft.activeFileIdx || 0
       lang.value = draft.lang || 'python'
       timeout.value = draft.timeout || 3000
-      memory.value = draft.memory || 256
-      allowNet.value = draft.allowNet || false
       packages.value = draft.packages || []
       lastSaved.value = savedTime
       return true
@@ -157,7 +151,7 @@ const debouncedSave = () => {
 }
 
 // Watch for changes and autosave
-watch([code, lang, timeout, memory, allowNet, packages], () => {
+watch([code, lang, timeout, packages], () => {
   debouncedSave()
 }, { deep: true })
 
@@ -207,7 +201,7 @@ const connectWebSocket = () => {
     ws.value.onopen = () => {
       isConnected.value = true
       reconnectAttempts.value = 0
-      console.log('✅ Connected to collaboration session')
+      // console.log('✅ Connected to collaboration session')
     }
 
     ws.value.onmessage = (event) => {
@@ -221,7 +215,7 @@ const connectWebSocket = () => {
 
     ws.value.onclose = () => {
       isConnected.value = false
-      console.log('❌ Disconnected from collaboration session')
+      // console.log('❌ Disconnected from collaboration session')
 
       // Try to reconnect
       if (reconnectAttempts.value < maxReconnectAttempts) {
@@ -440,31 +434,31 @@ const getFriendlyError = (error: any): string => {
 
   // Timeout errors
   if (message.includes('timeout') || message.includes('ETIMEDOUT')) {
-    return `⏱️ Execution timed out\n\nYour code took longer than ${timeout.value}ms to execute.\nTry:\n• Increasing the timeout limit\n• Optimizing your code\n• Reducing data processing`
+    return `Execution timed out\n\nYour code took longer than ${timeout.value}ms to execute.\nTry:\n• Increasing the timeout limit\n• Optimizing your code\n• Reducing data processing`
   }
 
   // Network errors
   if (message.includes('fetch failed') || message.includes('ECONNREFUSED')) {
-    return `🌐 Connection failed\n\nCouldn't reach the execution server.\nThis usually means:\n• The API is temporarily down\n• Network connectivity issue\n• Check your internet connection`
+    return `Connection failed\n\nCouldn't reach the execution server.\nThis usually means:\n• The API is temporarily down\n• Network connectivity issue\n• Check your internet connection`
   }
 
   // Cold start (takes 5-10s)
   if (message.includes('Headers Timeout')) {
-    return `⏳ Server is waking up...\n\nThe execution environment is initializing (takes 5-10 seconds on first run).\nRetrying automatically...`
+    return `Server is waking up...\n\nThe execution environment is initializing (takes 5-10 seconds on first run).\nRetrying automatically...`
   }
 
   // Memory errors
   if (message.includes('memory') || message.includes('OOM')) {
-    return `💾 Out of memory\n\nYour code used more than ${memory.value}MB of memory.\nTry:\n• Increasing memory limit\n• Processing data in smaller chunks\n• Reducing variable sizes`
+    return `Out of memory\n\nYour code used too much memory.\nTry:\n• Processing data in smaller chunks\n• Reducing variable sizes\n• Optimizing data structures`
   }
 
   // Syntax errors
   if (message.includes('SyntaxError')) {
-    return `❌ Syntax Error\n\n${message}\n\nCheck your code for:\n• Missing parentheses or brackets\n• Incorrect indentation (Python)\n• Missing semicolons (JavaScript)`
+    return `Syntax Error\n\n${message}\n\nCheck your code for:\n• Missing parentheses or brackets\n• Incorrect indentation (Python)\n• Missing semicolons (JavaScript)`
   }
 
   // Default error
-  return `❌ Execution Error\n\n${message}`
+  return `Execution Error\n\n${message}`
 }
 
 // Run code with retry logic
@@ -484,9 +478,7 @@ const runCode = async (isRetry = false) => {
     const payload: any = {
       lang: lang.value,
       policy: {
-        timeoutMs: timeout.value,
-        memoryMB: memory.value,
-        allowNet: allowNet.value
+        timeoutMs: timeout.value
       }
     }
 
@@ -544,9 +536,9 @@ const runCode = async (isRetry = false) => {
     localStorage.setItem('docle_history', JSON.stringify(newHistory))
 
     if (response.ok) {
-      showToast('✅ Code executed successfully', 'success')
+      showToast('Code executed successfully', 'success')
     } else {
-      showToast('⚠️ Execution completed with errors', 'error')
+      showToast('Execution completed with errors', 'error')
     }
 
   } catch (error: any) {
@@ -578,7 +570,7 @@ const runCode = async (isRetry = false) => {
       ? 'Connection failed'
       : 'Execution failed'
 
-    showToast(`❌ ${shortError}`, 'error')
+    showToast(`${shortError}`, 'error')
   } finally {
     isRunning.value = false
     loadingMessage.value = ''
@@ -855,30 +847,6 @@ const getStatusColor = () => {
                     type="number"
                     class="w-full px-3 py-2 bg-gray-500/10 text-white border border-gray-500/10 focus:border-gray-500/15 rounded-lg text-sm transition-all" />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">ms</span>
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-400 mb-1.5 font-medium">Memory</label>
-                <div class="relative">
-                  <input
-                    v-model.number="memory"
-                    type="number"
-                    class="w-full px-3 py-2 bg-gray-500/10 text-white border border-gray-500/10 focus:border-gray-500/15 rounded-lg text-sm transition-all" />
-                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">MB</span>
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-400 mb-1.5 font-medium">Network</label>
-                <div class="relative">
-                  <select
-                    v-model="allowNet"
-                    class="w-full px-3 py-2 bg-gray-500/10 text-white border border-gray-500/10 focus:border-gray-500/15 rounded-lg text-sm transition-all appearance-none cursor-pointer hover:border-gray-500/20 focus:outline-none">
-                    <option :value="false">Disabled</option>
-                    <option :value="true">Enabled</option>
-                  </select>
-                  <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
                 </div>
               </div>
               <div class="flex flex-col gap-2">

@@ -3,8 +3,6 @@ export type Theme = 'dark' | 'light';
 
 export interface DoclePolicy {
   timeoutMs?: number;
-  memoryMB?: number;
-  allowNet?: boolean;
 }
 
 export interface DocleRunOptions {

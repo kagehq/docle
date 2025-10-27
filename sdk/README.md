@@ -39,8 +39,6 @@ Executes code in a secure sandbox.
   - `apiKey` (string): Your Docle API key (get one at [app.docle.co](https://app.docle.co/login))
   - `policy?` (object): Execution policy
     - `timeoutMs?` (number): Max execution time in milliseconds (default: 5000)
-    - `memoryMB?` (number): Max memory in MB (default: 256)
-    - `allowNet?` (boolean): Allow network access (default: false)
   - `endpoint?` (string): Custom API endpoint (default: 'https://api.docle.co')
 
 **Returns:** `Promise<DocleResult>`
@@ -101,9 +99,7 @@ const result = await runSandbox(
     lang: "node",
     apiKey: process.env.DOCLE_API_KEY,
     policy: {
-      timeoutMs: 10000,
-      memoryMB: 512,
-      allowNet: false
+      timeoutMs: 10000
     }
   }
 );
