@@ -128,7 +128,7 @@ onUnmounted(() => {
               </span>
             </NuxtLink>
 
-            <NuxtLink
+            <!-- <NuxtLink
               to="/snippets"
               :class="[
                 'px-2 py-1.5 text-xs rounded-lg font-medium transition-all',
@@ -139,7 +139,7 @@ onUnmounted(() => {
               <span class="flex items-center gap-2">
                 Snippets
               </span>
-            </NuxtLink>
+            </NuxtLink> -->
           </div>
         </ClientOnly>
       </div>

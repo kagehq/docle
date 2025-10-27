@@ -10,7 +10,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const activeTab = ref<'cdn' | 'react' | 'vue' | 'iframe' | 'sdk' | 'proxy'>('cdn')
+const activeTab = ref<'cdn' | 'react' | 'vue' | 'iframe' | 'sdk' | 'proxy' | 'curl'>('cdn')
 const showCopied = ref(false)
 
 // Syntax highlighter function - simple and reliable
@@ -92,6 +92,75 @@ const highlight = (code: string, language: string): string => {
     }
 
     return parts.join('')
+  }
+
+  if (language === 'curl') {
+    // Shell/Bash highlighting for cURL
+    const parts: string[] = []
+    let lastIndex = 0
+
+    // Highlight strings (both single and double quotes)
+    const stringRegex = /(["'])(?:(?=(\\?))\2.)*?\1/g
+    // Highlight comments
+    const commentRegex = /#.*$/gm
+    // Highlight curl commands and flags
+    const commandRegex = /\b(curl|POST|GET|PUT|DELETE|PATCH|http|https)\b/g
+    const flagRegex = /(-[a-zA-Z]|--[a-zA-Z-]+)/g
+
+    const allMatches: Array<{index: number, length: number, type: string, text: string}> = []
+
+    let m
+    while ((m = stringRegex.exec(code)) !== null) {
+      allMatches.push({index: m.index, length: m[0].length, type: 'string', text: m[0]})
+    }
+    stringRegex.lastIndex = 0
+
+    while ((m = commentRegex.exec(code)) !== null) {
+      allMatches.push({index: m.index, length: m[0].length, type: 'comment', text: m[0]})
+    }
+    commentRegex.lastIndex = 0
+
+    while ((m = commandRegex.exec(code)) !== null) {
+      allMatches.push({index: m.index, length: m[0].length, type: 'command', text: m[0]})
+    }
+    commandRegex.lastIndex = 0
+
+    while ((m = flagRegex.exec(code)) !== null) {
+      allMatches.push({index: m.index, length: m[0].length, type: 'flag', text: m[0]})
+    }
+    flagRegex.lastIndex = 0
+
+    allMatches.sort((a, b) => a.index !== b.index ? a.index - b.index :
+      (a.type === 'string' || a.type === 'comment' ? -1 : b.type === 'string' || b.type === 'comment' ? 1 : 0))
+
+    const finalTokens: Array<{text: string, type: string}> = []
+    let lastEnd = 0
+
+    for (const match of allMatches) {
+      if (match.index < lastEnd) continue
+
+      if (match.index > lastEnd) {
+        finalTokens.push({text: code.slice(lastEnd, match.index), type: 'plain'})
+      }
+
+      finalTokens.push({text: match.text, type: match.type})
+      lastEnd = match.index + match.length
+    }
+
+    if (lastEnd < code.length) {
+      finalTokens.push({text: code.slice(lastEnd), type: 'plain'})
+    }
+
+    return finalTokens.map(token => {
+      const escaped = esc(token.text)
+      switch (token.type) {
+        case 'string': return `<span class="text-yellow-300">${escaped}</span>`
+        case 'comment': return `<span class="text-gray-500">${escaped}</span>`
+        case 'command': return `<span class="text-blue-400">${escaped}</span>`
+        case 'flag': return `<span class="text-pink-400">${escaped}</span>`
+        default: return escaped
+      }
+    }).join('')
   }
 
   if (language === 'react' || language === 'vue' || language === 'sdk' || language === 'proxy') {
@@ -453,6 +522,73 @@ export default defineEventHandler(async (event) => {
   }
 });`
 
+const curlSnippet = `# Direct API Usage with cURL
+# Make HTTP POST requests to the Docle API from any language
+
+# Basic Python execution
+curl -X POST https://api.docle.co/api/run \\
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "code": "print(\"Hello from cURL!\")",
+    "lang": "python"
+  }'
+
+# With execution policy options
+curl -X POST https://api.docle.co/api/run \\
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "code": "console.log(\"Node.js example\");",
+    "lang": "node",
+    "policy": {
+      "timeoutMs": 5000
+    }
+  }'
+
+# Response format:
+# {
+#   "ok": true,
+#   "stdout": "Hello from cURL!\\n",
+#   "stderr": "",
+#   "exitCode": 0
+# }
+
+# Python example using requests
+import requests
+
+response = requests.post(
+    'https://api.docle.co/api/run',
+    headers={
+        'Authorization': 'Bearer sk_live_YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'code': 'print("Hello!")',
+        'lang': 'python'
+    }
+)
+
+result = response.json()
+print(result['stdout'])
+
+# PHP example
+$ch = curl_init('https://api.docle.co/api/run');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Authorization: Bearer sk_live_YOUR_API_KEY',
+    'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'code' => 'print("Hello from PHP!")',
+    'lang' => 'python'
+]));
+
+$response = curl_exec($ch);
+$result = json_decode($response, true);
+echo $result['stdout'];`
+
 const currentSnippet = computed(() => {
   switch (activeTab.value) {
     case 'cdn': return cdnSnippet
@@ -461,6 +597,7 @@ const currentSnippet = computed(() => {
     case 'iframe': return iframeSnippet
     case 'sdk': return sdkSnippet
     case 'proxy': return proxySnippet
+    case 'curl': return curlSnippet
     default: return cdnSnippet
   }
 })
@@ -535,16 +672,16 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto px-6 py-6">
+      <div class="flex-1 overflow-y-auto">
         <!-- Tabs -->
-        <div class="flex items-center gap-2 mb-6 border-b border-gray-500/20 overflow-x-auto pb-2">
+        <div class="flex items-center gap-2 border-b border-gray-500/20 overflow-x-auto px-4">
           <button
             @click="activeTab = 'cdn'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'cdn'
-                ? 'text-blue-300 bg-blue-300/10 border-b-2 border-blue-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,10 +693,10 @@ onBeforeUnmount(() => {
           <button
             @click="activeTab = 'react'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'react'
-                ? 'text-blue-300 bg-blue-300/10 border-b-2 border-blue-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -571,10 +708,10 @@ onBeforeUnmount(() => {
           <button
             @click="activeTab = 'vue'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'vue'
-                ? 'text-blue-300 bg-blue-300/10 border-b-2 border-blue-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -586,10 +723,10 @@ onBeforeUnmount(() => {
           <button
             @click="activeTab = 'iframe'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'iframe'
-                ? 'text-blue-300 bg-blue-300/10 border-b-2 border-blue-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -601,10 +738,10 @@ onBeforeUnmount(() => {
           <button
             @click="activeTab = 'sdk'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'sdk'
-                ? 'text-blue-300 bg-blue-300/10 border-b-2 border-blue-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -616,10 +753,10 @@ onBeforeUnmount(() => {
           <button
             @click="activeTab = 'proxy'"
             :class="[
-              'px-3 py-2 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
               activeTab === 'proxy'
-                ? 'text-green-300 bg-green-300/10 border-b-2 border-green-300'
-                : 'text-gray-400 hover:text-white hover:bg-gray-500/5'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
             ]">
             <span class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -628,12 +765,27 @@ onBeforeUnmount(() => {
               Server Proxy
             </span>
           </button>
+          <button
+            @click="activeTab = 'curl'"
+            :class="[
+              'px-3 py-3 text-xs font-medium transition-all whitespace-nowrap rounded-t-lg',
+              activeTab === 'curl'
+                ? 'text-blue-300 border-b-2 border-blue-300'
+                : 'text-gray-400 hover:text-white'
+            ]">
+            <span class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              API / cURL
+            </span>
+          </button>
         </div>
 
         <!-- Code Block -->
-        <div class="bg-gray-500/10 rounded-lg border border-gray-500/10 overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-500/20">
-            <div class="flex items-center gap-2 text-sm text-gray-400">
+        <div class="bg-gray-500/10 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-gray-500/10">
+            <div class="flex items-center gap-2 text-xs text-gray-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
               </svg>
@@ -641,7 +793,7 @@ onBeforeUnmount(() => {
             </div>
             <button
               @click="copyToClipboard"
-              class="px-3 py-1.5 text-xs rounded-lg bg-blue-300/10 hover:bg-blue-300/20 text-blue-300 border border-blue-300/20 font-medium transition-all flex items-center gap-2">
+              class="px-2.5 py-1.5 text-xs rounded-lg bg-gray-500/10 hover:bg-gray-500/15 text-gray-300 border border-gray-500/10 font-medium transition-all flex items-center gap-2">
               <svg v-if="!showCopied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
               </svg>
@@ -651,7 +803,7 @@ onBeforeUnmount(() => {
               {{ showCopied ? 'Copied!' : 'Copy' }}
             </button>
           </div>
-          <div class="overflow-x-auto text-sm bg-black/30">
+          <div class="overflow-x-auto text-sm bg-black">
             <pre class="p-4 leading-relaxed font-mono m-0 whitespace-pre"><code v-html="highlightedSnippet" class="text-gray-300"></code></pre>
           </div>
           <div class="border-t border-gray-500/10 px-4 py-3 font-mono text-xs">
