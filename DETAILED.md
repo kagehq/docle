@@ -13,6 +13,7 @@
 7. [Usage Analytics](#usage-analytics)
 8. [REST API Reference](#rest-api-reference)
 9. [SDK & Framework Packages](#sdk--framework-packages)
+   - [Direct API Usage (Any Language)](#direct-api-usage-any-language)
 10. [Embeddable Components](#embeddable-components)
 11. [Security & Sandboxing](#security--sandboxing)
 12. [Multi-File Projects](#multi-file-projects)
@@ -63,12 +64,13 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 
 ### Integration Options
 
-- **REST API** - Simple HTTP endpoints
+- **REST API / cURL** - Direct HTTP requests from any language (Python, PHP, Ruby, Go, etc.)
 - **TypeScript SDK** - Type-safe client library
-- **React Components** - Pre-built UI components
-- **Vue 3 Components** - Native Vue integration
+- **React Components** - Pre-built UI components + hooks
+- **Vue 3 Components** - Native Vue integration + composables
 - **CDN Embed** - One-line website integration
 - **iframe Embed** - Sandboxed iframe embedding
+- **Server Proxy** - Secure backend integration (recommended for production)
 
 ---
 
@@ -1201,6 +1203,126 @@ const handleRun = async () => {
 
 [Full Vue Documentation →](packages/vue/README.md)
 
+### Direct API Usage (Any Language)
+
+Use Docle from any programming language with standard HTTP requests.
+
+**Python (requests library):**
+
+```python
+import requests
+
+response = requests.post(
+    'https://api.docle.co/api/run',
+    headers={
+        'Authorization': 'Bearer sk_live_YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'code': 'print("Hello from Python!")',
+        'lang': 'python'
+    }
+)
+
+result = response.json()
+print(result['stdout'])  # Output: Hello from Python!
+```
+
+**PHP (cURL):**
+
+```php
+$ch = curl_init('https://api.docle.co/api/run');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Authorization: Bearer sk_live_YOUR_API_KEY',
+    'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    'code' => 'print("Hello from PHP!")',
+    'lang' => 'python'
+]));
+
+$response = curl_exec($ch);
+$result = json_decode($response, true);
+echo $result['stdout'];
+```
+
+**Ruby (net/http):**
+
+```ruby
+require 'net/http'
+require 'json'
+
+uri = URI('https://api.docle.co/api/run')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true
+
+request = Net::HTTP::Post.new(uri)
+request['Authorization'] = 'Bearer sk_live_YOUR_API_KEY'
+request['Content-Type'] = 'application/json'
+request.body = {
+  code: 'puts "Hello from Ruby!"',
+  lang: 'python'
+}.to_json
+
+response = http.request(request)
+result = JSON.parse(response.body)
+puts result['stdout']
+```
+
+**Go:**
+
+```go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "code": `print("Hello from Go!")`,
+        "lang": "python",
+    }
+    
+    jsonData, _ := json.Marshal(payload)
+    
+    req, _ := http.NewRequest("POST", "https://api.docle.co/api/run", bytes.NewBuffer(jsonData))
+    req.Header.Set("Authorization", "Bearer sk_live_YOUR_API_KEY")
+    req.Header.Set("Content-Type", "application/json")
+    
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+    
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    
+    fmt.Println(result["stdout"])
+}
+```
+
+**Shell (cURL):**
+
+```bash
+curl -X POST https://api.docle.co/api/run \
+  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "print(\"Hello from cURL!\")",
+    "lang": "python",
+    "policy": {
+      "timeoutMs": 5000
+    }
+  }'
+```
+
+**💡 Tip:** Access all these examples (and more) from the Snippets panel in the dashboard - just click the "Snippets" button in the header!
+
 ---
 
 ## Embeddable Components
@@ -1491,17 +1613,26 @@ Docle provides a modern, production-ready dashboard built with **Nuxt.js** and *
   - Time, language, code snippet
   - Status, exit code, duration
 
-#### Snippets (`/snippets`)
+#### Snippets Panel (Accessible from Header)
+- **Quick access** - Click "Snippets" button in header from any page
+- **Side panel UI** - Slides in from right, doesn't interrupt workflow
 - **Multiple integration examples:**
   - CDN (script tag)
-  - React component
-  - Vue component
+  - React hooks & components
+  - Vue composables & components
   - iframe embedding
   - TypeScript SDK
-- **Live preview** - Interactive demo
+  - Server Proxy (secure)
+  - **API/cURL** - Direct HTTP requests for any language
 - **Copy to clipboard** - One-click code copying
-- **Syntax highlighting** - Color-coded examples
-- **Installation instructions** - Step-by-step guides
+- **Syntax highlighting** - Color-coded examples for all languages
+- **Installation instructions** - npm commands and setup guides
+- **Responsive design** - Full width on mobile, side panel on desktop
+- **Keyboard shortcuts** - ESC to close, seamless UX
+
+#### Snippets Page (`/snippets`)
+- **Full-page view** - Dedicated page for browsing all examples
+- **Same content as panel** - All integration options available
 - **Auth required** - Sign in to view
 
 #### Embed Page (`/embed`)

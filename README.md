@@ -87,7 +87,9 @@ function Editor() {
 }
 ```
 
-### Direct API
+### Direct API (cURL)
+
+Use from any language with simple HTTP requests:
 
 ```bash
 curl -X POST https://api.docle.co/api/run \
