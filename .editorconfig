@@ -1,7 +1,11 @@
-[*.{js,jsx,ts,tsx,vue, astro, svelte}]
+[*.{js,jsx,ts,tsx,vue,astro,svelte}]
 indent_style = tab
 indent_size = 2
-end_of_line = crlf
+end_of_line = lf
 trim_trailing_whitespace = true
 insert_final_newline = true
 max_line_length = 100
+
+[*.sh]
+end_of_line = lf
+insert_final_newline = true
