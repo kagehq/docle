@@ -2,8 +2,20 @@
   "name": "@doclehq/rate-limit",
   "version": "0.1.0",
   "description": "Per-user rate limiting utilities for Docle",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -13,10 +25,23 @@
     "docle",
     "rate-limiting",
     "rate-limit",
-    "user-rate-limit"
+    "user-rate-limit",
+    "redis",
+    "upstash",
+    "sliding-window"
   ],
-  "author": "Docle",
-  "license": "MIT",
+  "author": "Treadie, Inc",
+  "license": "FSL-1.1-MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kagehq/docle.git",
+    "directory": "packages/rate-limit"
+  },
+  "homepage": "https://github.com/kagehq/docle/tree/main/packages/rate-limit#readme",
+  "bugs": {
+    "url": "https://github.com/kagehq/docle/issues"
+  },
+  "private": false,
   "peerDependencies": {
     "ioredis": "^5.0.0",
     "@upstash/redis": "^1.0.0"

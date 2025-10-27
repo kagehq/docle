@@ -13,20 +13,35 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "docle",
     "react",
     "code-execution",
     "sandbox",
-    "playground"
+    "playground",
+    "python",
+    "nodejs"
   ],
+  "author": "Docle",
   "license": "FSL-1.1-MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kagehq/docle.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/kagehq/docle/tree/main/packages/react#readme",
+  "bugs": {
+    "url": "https://github.com/kagehq/docle/issues"
+  },
+  "private": false,
   "peerDependencies": {
     "react": "^18.0.0",
     "react-dom": "^18.0.0"

@@ -13,18 +13,32 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "docle",
     "sandbox",
     "code-execution",
-    "cloudflare"
+    "cloudflare",
+    "python",
+    "nodejs"
   ],
+  "author": "Docle",
   "license": "FSL-1.1-MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kagehq/docle.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/kagehq/docle#readme",
+  "bugs": {
+    "url": "https://github.com/kagehq/docle/issues"
+  },
   "private": false,
   "devDependencies": {
     "typescript": "^5.6.3"

@@ -14,11 +14,12 @@
   },
   "files": [
     "dist",
-    "src"
+    "README.md"
   ],
   "scripts": {
     "build": "vue-tsc && vite build",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "docle",
@@ -26,10 +27,22 @@
     "code-execution",
     "vue",
     "vue3",
-    "cloudflare"
+    "cloudflare",
+    "python",
+    "nodejs"
   ],
-  "author": "Treadie, Inc",
+  "author": "Docle",
   "license": "FSL-1.1-MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kagehq/docle.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://github.com/kagehq/docle/tree/main/packages/vue#readme",
+  "bugs": {
+    "url": "https://github.com/kagehq/docle/issues"
+  },
+  "private": false,
   "peerDependencies": {
     "vue": "^3.3.0"
   },
@@ -41,7 +54,7 @@
     "vue-tsc": "^2.0.0"
   },
   "dependencies": {
-    "@doclehq/sdk": "*"
+    "@doclehq/sdk": "^0.1.1"
   }
 }
 
