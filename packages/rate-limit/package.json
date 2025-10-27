@@ -1,0 +1,39 @@
+{
+  "name": "@doclehq/rate-limit",
+  "version": "0.1.0",
+  "description": "Per-user rate limiting utilities for Docle",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "docle",
+    "rate-limiting",
+    "rate-limit",
+    "user-rate-limit"
+  ],
+  "author": "Docle",
+  "license": "MIT",
+  "peerDependencies": {
+    "ioredis": "^5.0.0",
+    "@upstash/redis": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    },
+    "@upstash/redis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ioredis": "^5.3.2",
+    "@upstash/redis": "^1.28.0"
+  }
+}
+

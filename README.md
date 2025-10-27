@@ -174,7 +174,7 @@ console.log(result.stdout); // "Hello!"
 
 ## Alternative: Direct API Usage
 
-> ⚠️ **Security Warning**  
+> **Security Warning**  
 > The patterns below expose your API key client-side. Only use these if:
 > - You've set up domain restrictions in your dashboard
 > - You understand the security implications
@@ -188,7 +188,7 @@ import { DoclePlayground } from '@doclehq/react';
 <DoclePlayground 
   lang="python"
   code="print('Hello!')"
-  apiKey="sk_live_YOUR_KEY"  // ⚠️ Exposed client-side
+  apiKey="sk_live_YOUR_KEY"
   onRun={(result) => console.log(result)}
 />
 ```
@@ -204,7 +204,7 @@ import { DoclePlayground } from '@doclehq/vue';
   <DoclePlayground 
     lang="python"
     code="print('Hello!')"
-    api-key="sk_live_YOUR_KEY"  <!-- ⚠️ Exposed client-side -->
+    api-key="sk_live_YOUR_KEY"
   />
 </template>
 ```
@@ -214,7 +214,7 @@ import { DoclePlayground } from '@doclehq/vue';
 ```html
 <script src="https://unpkg.com/@doclehq/embed@latest/dist/embed.js"></script>
 <script>
-  window.docleApiKey = 'sk_live_YOUR_KEY';  // ⚠️ Exposed client-side
+  window.docleApiKey = 'sk_live_YOUR_KEY';
 </script>
 
 <div data-docle data-lang="python">
@@ -254,6 +254,247 @@ await run(code, {
 - Set up rate limits per project
 - Revoke compromised keys immediately
 
+## Advanced: Per-User Rate Limiting
+
+For SaaS apps with multiple users, implement per-user rate limiting in your server proxy to ensure fair usage.
+
+### Why Per-User Rate Limiting?
+
+**Without per-user limits (per-key only):**
+- All users share one API key's rate limit
+- One abusive user affects everyone
+- Hard to implement fair usage policies
+
+**With per-user limits:**
+- Each user gets their own quota
+- Isolated limits - one user can't exhaust quota for others
+- Better abuse prevention and scalability
+
+### Implementation with Redis
+
+```typescript
+// lib/rate-limit.ts
+import { Redis } from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+export async function checkUserRateLimit({
+  userId,
+  limit = 100,
+  windowMs = 60000 // 1 minute
+}: {
+  userId: string;
+  limit?: number;
+  windowMs?: number;
+}) {
+  const key = `rate-limit:user:${userId}`;
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  // Add current request timestamp
+  await redis.zadd(key, now, `${now}`);
+  
+  // Remove old entries outside the window
+  await redis.zremrangebyscore(key, 0, windowStart);
+  
+  // Count requests in current window
+  const count = await redis.zcard(key);
+  
+  // Set expiry
+  await redis.expire(key, Math.ceil(windowMs / 1000));
+  
+  const remaining = Math.max(0, limit - count);
+  const success = count <= limit;
+  
+  return {
+    success,
+    remaining,
+    limit,
+    reset: new Date(now + windowMs)
+  };
+}
+
+// app/api/docle/route.ts
+import { checkUserRateLimit } from '@/lib/rate-limit';
+
+export async function POST(req: Request) {
+  const { code, lang, policy } = await req.json();
+  
+  // Authenticate user
+  const session = await getServerSession();
+  if (!session?.user?.id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // Check per-user rate limit
+  const rateLimit = await checkUserRateLimit({
+    userId: session.user.id,
+    limit: 100,      // 100 requests
+    windowMs: 60000  // per minute
+  });
+  
+  if (!rateLimit.success) {
+    return Response.json({ 
+      error: 'Rate limit exceeded',
+      remaining: rateLimit.remaining,
+      reset: rateLimit.reset
+    }, { 
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': rateLimit.limit.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.reset.toISOString()
+      }
+    });
+  }
+  
+  // Proxy to Docle
+  const result = await fetch('https://api.docle.co/api/run', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.DOCLE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ code, lang, policy })
+  });
+  
+  return Response.json(await result.json());
+}
+```
+
+### Implementation with Upstash
+
+Perfect for edge/serverless environments:
+
+```typescript
+// lib/rate-limit.ts
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// Create rate limiter
+export const userRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(100, '1 m'), // 100 requests per minute
+  analytics: true,
+  prefix: 'docle:user',
+});
+
+// In your API route
+export async function POST(req: Request) {
+  const session = await getServerSession();
+  if (!session?.user?.id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // Check rate limit
+  const { success, limit, remaining, reset } = await userRateLimit.limit(
+    session.user.id
+  );
+  
+  if (!success) {
+    return Response.json({ 
+      error: 'Rate limit exceeded',
+      reset: new Date(reset)
+    }, { status: 429 });
+  }
+  
+  // ... rest of proxy logic
+}
+```
+
+### Implementation with In-Memory (Development)
+
+For local development without Redis:
+
+```typescript
+// lib/rate-limit.ts
+interface RateLimitEntry {
+  timestamps: number[];
+}
+
+const rateLimits = new Map<string, RateLimitEntry>();
+
+export function checkUserRateLimit({
+  userId,
+  limit = 100,
+  windowMs = 60000
+}: {
+  userId: string;
+  limit?: number;
+  windowMs?: number;
+}) {
+  const now = Date.now();
+  const windowStart = now - windowMs;
+  
+  // Get or create user entry
+  let entry = rateLimits.get(userId);
+  if (!entry) {
+    entry = { timestamps: [] };
+    rateLimits.set(userId, entry);
+  }
+  
+  // Remove old timestamps
+  entry.timestamps = entry.timestamps.filter(ts => ts > windowStart);
+  
+  // Add current timestamp
+  entry.timestamps.push(now);
+  
+  const count = entry.timestamps.length;
+  const remaining = Math.max(0, limit - count);
+  const success = count <= limit;
+  
+  return {
+    success,
+    remaining,
+    limit,
+    reset: new Date(now + windowMs)
+  };
+}
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [userId, entry] of rateLimits.entries()) {
+    if (entry.timestamps.length === 0 || 
+        Math.max(...entry.timestamps) < now - 3600000) {
+      rateLimits.delete(userId);
+    }
+  }
+}, 300000); // Every 5 minutes
+```
+
+### Tiered Rate Limiting
+
+Different limits for different user tiers:
+
+```typescript
+const RATE_LIMITS = {
+  free: { requests: 100, windowMs: 60000 },   // 100/min
+  pro: { requests: 1000, windowMs: 60000 },   // 1000/min
+  enterprise: { requests: 10000, windowMs: 60000 } // 10000/min
+};
+
+export async function POST(req: Request) {
+  const session = await getServerSession();
+  const userTier = session.user.tier || 'free';
+  
+  const { requests, windowMs } = RATE_LIMITS[userTier];
+  
+  const rateLimit = await checkUserRateLimit({
+    userId: session.user.id,
+    limit: requests,
+    windowMs
+  });
+  
+  // ... rest of logic
+}
+```
+
 ## Examples
 
 Check out [examples/](examples/) for working demos of secure integration patterns.
@@ -285,8 +526,8 @@ Docle runs on Cloudflare Workers. Requirements:
 - Cloudflare account
 - Workers Paid plan ($5/month) for Sandbox access
 
-See [PRODUCTION.md](PRODUCTION.md) for the deployment guide.
-
 ---
+
+FSL-1.1-MIT License. See LICENSE file for details.
 
 **Built with ❤️ using [Cloudflare Workers](https://workers.cloudflare.com) and [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/)**

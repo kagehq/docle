@@ -7,6 +7,15 @@ export const Policy = z.object({
   timeoutMs: z.number().int().min(100).max(300000).default(3000)
 }).partial().default({});
 
+// User context for per-user tracking and rate limiting
+export const UserContext = z.object({
+  id: z.string().min(1).max(255),
+  email: z.string().email().optional(),
+  name: z.string().max(255).optional(),
+  tier: z.enum(['free', 'pro', 'enterprise']).optional(),
+  metadata: z.record(z.unknown()).optional()
+}).optional();
+
 // Multi-file support
 export const FileEntry = z.object({
   path: z.string(), // e.g., "main.py", "utils.py", "package.json"
@@ -31,7 +40,9 @@ export const RunRequest = z.object({
   // Package installation
   packages: PackageSpec.optional(),
   lang: Lang,
-  policy: Policy
+  policy: Policy,
+  // Optional user context for per-user tracking
+  userContext: UserContext
 }).refine(
   (data) => data.code || (data.files && data.files.length > 0),
   { message: "Either 'code' or 'files' must be provided" }
