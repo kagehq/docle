@@ -1,6 +1,6 @@
 {
   "name": "@doclehq/vue",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Vue 3 components for Docle embedded sandbox",
   "type": "module",
   "main": "./dist/index.js",
@@ -54,7 +54,7 @@
     "vue-tsc": "^2.0.0"
   },
   "dependencies": {
-    "@doclehq/sdk": "^0.1.1"
+    "@doclehq/sdk": "^0.1.2"
   }
 }
 
