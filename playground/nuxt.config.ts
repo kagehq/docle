@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-10-01',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
-
+  
   // Global CSS
   css: [
     '~/assets/css/main.css'
@@ -17,9 +17,12 @@ export default defineNuxtConfig({
     }
   },
 
-  // API proxy to your Worker (for local development)
-  // Note: Don't proxy /api/* because Nuxt needs it for server routes
+  // Nitro configuration
   nitro: {
+    // Use Cloudflare Pages preset for server routes support
+    preset: 'cloudflare-pages',
+    
+    // API proxy to your Worker (for local development)
     devProxy: {
       // Proxy specific backend endpoints only
       '/backend': {
@@ -31,6 +34,7 @@ export default defineNuxtConfig({
         }
       }
     },
+    
     // Security headers
     routeRules: {
       '/**': {

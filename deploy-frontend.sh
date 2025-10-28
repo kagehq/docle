@@ -9,7 +9,7 @@ echo ""
 cd playground
 
 echo "📦 Building..."
-npm run generate
+npm run build
 
 if [ $? -ne 0 ]; then
   echo "❌ Build failed!"
@@ -18,7 +18,7 @@ fi
 
 echo ""
 echo "🌐 Deploying to Pages..."
-npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true
+npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true --compatibility-flag=nodejs_compat
 
 if [ $? -eq 0 ]; then
   echo ""
