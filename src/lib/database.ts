@@ -180,7 +180,6 @@ export async function validateApiKey(env: Env, key: string, origin?: string): Pr
   if (allowedDomains && allowedDomains.length > 0) {
     // If domains are restricted but no origin provided, reject the request
     if (!origin) {
-      console.log('[Domain Check] No origin provided, but domains are restricted:', allowedDomains);
       return null;
     }
 
@@ -189,17 +188,13 @@ export async function validateApiKey(env: Env, key: string, origin?: string): Pr
       originHostname = new URL(origin).hostname;
     } catch (e) {
       // If origin is not a valid URL, try to extract hostname manually
-      console.log('[Domain Check] Failed to parse origin as URL:', origin);
       const match = origin.match(/^https?:\/\/([^/:]+)/);
       if (match) {
         originHostname = match[1];
       } else {
-        console.log('[Domain Check] Could not extract hostname from origin:', origin);
         return null;
       }
     }
-
-    console.log('[Domain Check] Origin hostname:', originHostname, 'Allowed domains:', allowedDomains);
 
     const isAllowed = allowedDomains.some((domain: string) => {
       const trimmedDomain = domain.trim();
@@ -207,17 +202,11 @@ export async function validateApiKey(env: Env, key: string, origin?: string): Pr
       // Support wildcard domains like *.example.com
       if (trimmedDomain.startsWith('*.')) {
         const domainSuffix = trimmedDomain.slice(2);
-        const matches = originHostname === domainSuffix || originHostname.endsWith('.' + domainSuffix);
-        console.log('[Domain Check] Wildcard check:', trimmedDomain, 'vs', originHostname, '=', matches);
-        return matches;
+        return originHostname === domainSuffix || originHostname.endsWith('.' + domainSuffix);
       }
       
-      const matches = originHostname === trimmedDomain;
-      console.log('[Domain Check] Exact match check:', trimmedDomain, 'vs', originHostname, '=', matches);
-      return matches;
+      return originHostname === trimmedDomain;
     });
-
-    console.log('[Domain Check] Final result:', isAllowed);
 
     if (!isAllowed) {
       return null;
@@ -249,7 +238,7 @@ export async function getApiKeysByProject(env: Env, projectId: string): Promise<
 }
 
 export async function revokeApiKey(env: Env, keyId: string): Promise<void> {
-  await env.DB.prepare("UPDATE api_keys SET is_active = 0 WHERE id = ?1")
+  await env.DB.prepare("DELETE FROM api_keys WHERE id = ?1")
     .bind(keyId)
     .run();
 }

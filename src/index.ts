@@ -445,9 +445,9 @@ app.delete("/api/keys/:id", requireSession, async (c) => {
 
     await revokeApiKey(c.env, keyId);
 
-    return c.json({ message: "API key revoked" });
+    return c.json({ message: "API key deleted" });
   } catch (error: any) {
-    return c.json({ error: "Failed to revoke API key" }, 500);
+    return c.json({ error: "Failed to delete API key" }, 500);
   }
 });
 
