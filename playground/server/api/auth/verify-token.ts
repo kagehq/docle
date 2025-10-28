@@ -27,16 +27,15 @@ export default defineEventHandler(async (event) => {
     });
 
     if (response.ok) {
-      // Backend returns session token in response body
+      // Backend returns success and user, and sets cookie via Set-Cookie header
       const data = await response.json();
 
-      if (data.success && data.sessionToken) {
-        // Set the session cookie
-        const isProduction = process.env.NODE_ENV === 'production';
-        const cookieFlags = `HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`;
-        const cookieHeader = `docle_session=${data.sessionToken}; ${cookieFlags}`;
-
-        setHeader(event, 'set-cookie', cookieHeader);
+      if (data.success) {
+        // Forward the Set-Cookie header from backend
+        const setCookie = response.headers.get('set-cookie');
+        if (setCookie) {
+          setHeader(event, 'set-cookie', setCookie);
+        }
 
         return { success: true, user: data.user };
       }
