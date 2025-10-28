@@ -10,10 +10,21 @@ useHead({
 // which is an iframe-based playground component
 // This is perfect for quickly embedding a playground in any app
 
-// Demo API key - you can pass it via URL parameter or set default
-const route = useRoute()
-const demoApiKey = ref<string | null>(route.query.key as string || null)
-const isLoadingKey = ref(false)
+// Get demo API key on mount
+const demoApiKey = ref<string | null>(null)
+const isLoadingKey = ref(true)
+
+onMounted(async () => {
+  try {
+    // Get demo API key from public endpoint
+    const response = await $fetch('/api/demo-key')
+    demoApiKey.value = response.apiKey
+  } catch (error) {
+    console.error('Failed to get demo API key:', error)
+  } finally {
+    isLoadingKey.value = false
+  }
+})
 
 // Demo code examples for different languages
 const pythonExample = `# Calculate Fibonacci sequence
@@ -82,9 +93,15 @@ const handleError = (error: any) => {
     <!-- Main Content -->
     <div class="flex-1">
 			<div class="max-w-8xl mx-auto">
+				<!-- Loading State -->
+				<div v-if="isLoadingKey" class="bg-gray-500/10 border border-gray-500/20 rounded-lg p-12 text-center">
+					<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+					<p class="text-gray-400">Loading playground...</p>
+				</div>
+
 				<!-- Playground -->
 				<DoclePlayground
-					v-if="demoApiKey"
+					v-else-if="demoApiKey"
 					:lang="currentLang"
 					:code="currentCode"
 					:api-key="demoApiKey"
@@ -93,21 +110,13 @@ const handleError = (error: any) => {
 					@error="handleError"
 				/>
 
-        <!-- Error State / No API Key -->
+        <!-- Error State -->
         <div v-else class="bg-gray-500/10 border border-gray-500/20 rounded-lg p-12 text-center">
-          <svg class="w-16 h-16 mx-auto mb-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+          <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <h3 class="text-xl font-semibold text-white mb-2">API Key Required</h3>
-          <p class="text-gray-400 mb-4">
-            To use the demo, add your API key to the URL:
-          </p>
-          <code class="block bg-black/50 text-blue-300 px-4 py-2 rounded text-sm mb-4">
-            ?key=YOUR_API_KEY
-          </code>
-          <p class="text-xs text-gray-500">
-            Don't have an API key? <a href="/login" class="text-blue-300 hover:text-blue-400 underline">Sign up for free</a>
-          </p>
+          <h3 class="text-xl font-semibold text-white mb-2">Failed to Load Playground</h3>
+          <p class="text-gray-400 mb-4">Demo API key is not configured. Please contact support.</p>
         </div>
 			</div>
     </div>
