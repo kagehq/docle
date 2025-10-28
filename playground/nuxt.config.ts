@@ -21,6 +21,13 @@ export default defineNuxtConfig({
   nitro: {
     // Use Cloudflare Pages preset for server routes support
     preset: 'cloudflare-pages',
+    
+    // Ensure proper SPA fallback for all routes
+    prerender: {
+      failOnError: false,
+      routes: ['/'],
+      crawlLinks: false
+    },
 
     // API proxy to your Worker (for local development)
     devProxy: {
