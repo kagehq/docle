@@ -86,7 +86,7 @@
             <div class="relative">
               <textarea
                 v-model="code"
-                class="w-full h-96 p-4 bg-black rounded-lg font-mono text-sm focus:outline-none resize-none scrollbar-thin scrollbar-track-black scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-600"
+                class="w-full h-96 p-4 bg-black rounded-lg font-mono text-sm focus:outline-none resize-none"
                 :placeholder="placeholderCode"
                 spellcheck="false"
               ></textarea>
