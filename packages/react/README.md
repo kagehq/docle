@@ -45,7 +45,7 @@ function App() {
 | `autorun` | `boolean` | `false` | Auto-run on mount |
 | `height` | `string` \| `number` | `'400px'` | Component height |
 | `width` | `string` \| `number` | `'100%'` | Component width |
-| `endpoint` | `string` | `'https://api.docle.co'` | Base URL where embed page is hosted |
+| `endpoint` | `string` | `'https://app.docle.co'` | Base URL where embed page is hosted |
 | `apiKey` | `string` | `undefined` | API key for authentication (requires domain restrictions) |
 | `onReady` | `(data) => void` | `undefined` | Callback when ready |
 | `onRun` | `(result) => void` | `undefined` | Callback after execution |
