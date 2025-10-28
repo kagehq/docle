@@ -1,6 +1,6 @@
 {
   "name": "@doclehq/rate-limit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Per-user rate limiting utilities for Docle",
   "type": "module",
   "main": "dist/index.js",
