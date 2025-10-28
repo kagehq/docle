@@ -452,6 +452,201 @@ app.delete("/api/keys/:id", requireSession, async (c) => {
 });
 
 // =============================================
+// INSTANT API ENDPOINTS (Session required)
+// =============================================
+
+// Helper function to generate short IDs
+function generateShortId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
+
+// Create instant endpoint (JSON API)
+app.post("/api/endpoints", requireSession, async (c) => {
+  try {
+    const user = c.get("user")!;
+    const { code, lang, name, description } = await c.req.json();
+
+    if (!code || !lang) {
+      return c.json({ error: "Code and language are required" }, 400);
+    }
+
+    if (!['node', 'python'].includes(lang)) {
+      return c.json({ error: "Language must be 'node' or 'python'" }, 400);
+    }
+
+    // Generate unique endpoint ID
+    const endpointId = generateShortId();
+    const now = new Date().toISOString();
+
+    // Store endpoint in KV
+    await c.env.RUNS.put(`endpoint:${endpointId}`, JSON.stringify({
+      id: endpointId,
+      userId: user.id,
+      code,
+      lang,
+      name: name || 'Untitled Endpoint',
+      description: description || null,
+      createdAt: now,
+      lastCalledAt: null,
+      callCount: 0
+    }));
+
+    // Store in user's endpoint list
+    const userEndpointsKey = `user_endpoints:${user.id}`;
+    const existingEndpoints = (await c.env.RUNS.get(userEndpointsKey, 'json') as string[]) || [];
+    existingEndpoints.push(endpointId);
+    await c.env.RUNS.put(userEndpointsKey, JSON.stringify(existingEndpoints));
+
+    return c.json({
+      id: endpointId,
+      url: `${c.env.APP_URL || "http://localhost:8787"}/api/e/${endpointId}`,
+      name: name || 'Untitled Endpoint',
+      createdAt: now
+    });
+  } catch (error: any) {
+    console.error("Error creating endpoint:", error);
+    return c.json({ error: "Failed to create endpoint" }, 500);
+  }
+});
+
+// List user's endpoints (JSON API)
+app.get("/api/endpoints", requireSession, async (c) => {
+  try {
+    const user = c.get("user")!;
+    const userEndpointsKey = `user_endpoints:${user.id}`;
+
+    const endpointIds = (await c.env.RUNS.get(userEndpointsKey, 'json') as string[]) || [];
+
+    const endpoints = await Promise.all(
+      endpointIds.map(async (id: string) => {
+        const data: any = await c.env.RUNS.get(`endpoint:${id}`, 'json');
+        if (!data) return null;
+        return {
+          id: data.id,
+          name: data.name,
+          description: data.description,
+          lang: data.lang,
+          url: `${c.env.APP_URL || "http://localhost:8787"}/api/e/${data.id}`,
+          createdAt: data.createdAt,
+          lastCalledAt: data.lastCalledAt,
+          callCount: data.callCount
+        };
+      })
+    );
+
+    return c.json({
+      endpoints: endpoints.filter((e: any) => e !== null)
+    });
+  } catch (error: any) {
+    console.error("Error listing endpoints:", error);
+    return c.json({ error: "Failed to list endpoints" }, 500);
+  }
+});
+
+// Get endpoint details (JSON API)
+app.get("/api/endpoints/:id", requireSession, async (c) => {
+  try {
+    const user = c.get("user")!;
+    const endpointId = c.req.param("id");
+
+    const data: any = await c.env.RUNS.get(`endpoint:${endpointId}`, 'json');
+
+    if (!data || data.userId !== user.id) {
+      return c.json({ error: "Endpoint not found" }, 404);
+    }
+
+    // Get recent logs
+    const logsKey = `endpoint_logs:${endpointId}`;
+    const logs: any = (await c.env.RUNS.get(logsKey, 'json') as any[]) || [];
+
+    return c.json({
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      code: data.code,
+      lang: data.lang,
+      url: `${c.env.APP_URL || "http://localhost:8787"}/api/e/${data.id}`,
+      createdAt: data.createdAt,
+      lastCalledAt: data.lastCalledAt,
+      callCount: data.callCount,
+      logs: logs.slice(-50) // Last 50 logs
+    });
+  } catch (error: any) {
+    console.error("Error getting endpoint:", error);
+    return c.json({ error: "Failed to get endpoint" }, 500);
+  }
+});
+
+// Update endpoint (JSON API)
+app.put("/api/endpoints/:id", requireSession, async (c) => {
+  try {
+    const user = c.get("user")!;
+    const endpointId = c.req.param("id");
+    const { code, name, description } = await c.req.json();
+
+    const data: any = await c.env.RUNS.get(`endpoint:${endpointId}`, 'json');
+
+    if (!data || data.userId !== user.id) {
+      return c.json({ error: "Endpoint not found" }, 404);
+    }
+
+    // Update endpoint data
+    const updated = {
+      ...data,
+      code: code !== undefined ? code : data.code,
+      name: name !== undefined ? name : data.name,
+      description: description !== undefined ? description : data.description
+    };
+
+    await c.env.RUNS.put(`endpoint:${endpointId}`, JSON.stringify(updated));
+
+    return c.json({
+      id: updated.id,
+      name: updated.name,
+      description: updated.description,
+      url: `${c.env.APP_URL || "http://localhost:8787"}/api/e/${updated.id}`
+    });
+  } catch (error: any) {
+    console.error("Error updating endpoint:", error);
+    return c.json({ error: "Failed to update endpoint" }, 500);
+  }
+});
+
+// Delete endpoint (JSON API)
+app.delete("/api/endpoints/:id", requireSession, async (c) => {
+  try {
+    const user = c.get("user")!;
+    const endpointId = c.req.param("id");
+
+    const data: any = await c.env.RUNS.get(`endpoint:${endpointId}`, 'json');
+
+    if (!data || data.userId !== user.id) {
+      return c.json({ error: "Endpoint not found" }, 404);
+    }
+
+    // Delete endpoint
+    await c.env.RUNS.delete(`endpoint:${endpointId}`);
+    await c.env.RUNS.delete(`endpoint_logs:${endpointId}`);
+
+    // Remove from user's endpoint list
+    const userEndpointsKey = `user_endpoints:${user.id}`;
+    const endpointIds = (await c.env.RUNS.get(userEndpointsKey, 'json') as string[]) || [];
+    const filtered = endpointIds.filter((id: string) => id !== endpointId);
+    await c.env.RUNS.put(userEndpointsKey, JSON.stringify(filtered));
+
+    return c.json({ message: "Endpoint deleted" });
+  } catch (error: any) {
+    console.error("Error deleting endpoint:", error);
+    return c.json({ error: "Failed to delete endpoint" }, 500);
+  }
+});
+
+// =============================================
 // API ROUTES (Hybrid: Public + Authenticated)
 // =============================================
 
@@ -566,6 +761,149 @@ app.get("/api/run/:id", async (c) => {
   const raw = await c.env.RUNS.get(`runs:${c.req.param("id")}`);
   if (!raw) return c.json({ error: "not found" }, 404);
   return c.json(JSON.parse(raw));
+});
+
+// =============================================
+// DYNAMIC ENDPOINT EXECUTION (Public)
+// =============================================
+
+// Execute instant endpoint (GET/POST/PUT/DELETE)
+app.all("/api/e/:endpointId", async (c) => {
+  try {
+    const endpointId = c.req.param("endpointId");
+
+    // Fetch endpoint from KV
+    const data: any = await c.env.RUNS.get(`endpoint:${endpointId}`, 'json');
+
+    if (!data) {
+      return c.json({ error: 'Endpoint not found' }, 404);
+    }
+
+    // Prepare request context for user code
+    const url = new URL(c.req.url);
+    const queryParams: Record<string, string> = {};
+    url.searchParams.forEach((value, key) => {
+      queryParams[key] = value;
+    });
+
+    let requestBody: any = {};
+    const contentType = c.req.header('content-type') || '';
+
+    try {
+      if (contentType.includes('application/json')) {
+        requestBody = await c.req.json();
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const formData = await c.req.formData();
+        const formObj: Record<string, any> = {};
+        for (const [key, value] of formData.entries()) {
+          formObj[key] = value;
+        }
+        requestBody = formObj;
+      } else if (c.req.method !== 'GET') {
+        requestBody = await c.req.text();
+      }
+    } catch (e) {
+      // If body parsing fails, leave empty
+    }
+
+    const headers: Record<string, string> = {};
+    c.req.raw.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+
+    const requestContext = {
+      method: c.req.method,
+      query: queryParams,
+      body: requestBody,
+      headers: headers,
+      path: url.pathname
+    };
+
+    // Wrap user code to export the handler result
+    let wrappedCode: string;
+    if (data.lang === 'node') {
+      wrappedCode = `
+const request = ${JSON.stringify(requestContext)};
+
+${data.code}
+
+// Execute handler and return result
+(async () => {
+  try {
+    const result = await handler(request);
+    console.log(JSON.stringify(result));
+  } catch (error) {
+    console.error(JSON.stringify({ error: error.message }));
+  }
+})();
+`;
+    } else {
+      // Python
+      wrappedCode = `
+import json
+
+request = ${JSON.stringify(requestContext)}
+
+${data.code}
+
+# Execute handler and return result
+try:
+    result = handler(request)
+    print(json.dumps(result))
+except Exception as error:
+    print(json.dumps({"error": str(error)}), file=sys.stderr)
+`;
+    }
+
+    // Execute the code
+    const policy = { timeoutMs: 5000 }; // 5 second timeout for endpoints
+
+    const exec = c.env.SANDBOX
+      ? await runInSandbox(c.env, { code: wrappedCode }, data.lang, policy, `endpoint-${endpointId}`)
+      : await simulateExec({ code: wrappedCode }, data.lang, policy);
+
+    // Update endpoint stats
+    const now = new Date().toISOString();
+    data.lastCalledAt = now;
+    data.callCount = (data.callCount || 0) + 1;
+    await c.env.RUNS.put(`endpoint:${endpointId}`, JSON.stringify(data));
+
+    // Log execution
+    const logsKey = `endpoint_logs:${endpointId}`;
+    const logs: any[] = (await c.env.RUNS.get(logsKey, 'json') as any[]) || [];
+    logs.push({
+      timestamp: now,
+      method: c.req.method,
+      query: queryParams,
+      status: exec.exitCode === 0 ? 'success' : 'error',
+      exitCode: exec.exitCode,
+      executionTime: exec.usage?.cpuMs || 0
+    });
+
+    // Keep only last 100 logs
+    const recentLogs = logs.slice(-100);
+    await c.env.RUNS.put(logsKey, JSON.stringify(recentLogs));
+
+    // Parse and return response
+    if (exec.exitCode !== 0) {
+      return c.json({
+        error: 'Endpoint execution failed',
+        stderr: exec.stderr,
+        stdout: exec.stdout
+      }, 500);
+    }
+
+    try {
+      const output = JSON.parse(exec.stdout.trim());
+      return c.json(output);
+    } catch {
+      // If not JSON, return as text
+      return c.text(exec.stdout);
+    }
+  } catch (e: any) {
+    console.error('Endpoint execution error:', e);
+    return c.json({ error: String(e?.message || e) }, 500);
+  }
 });
 
 // Serve CDN embed script

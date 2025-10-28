@@ -41,9 +41,9 @@ const handleCancel = () => {
 const getButtonClasses = () => {
   switch (props.type) {
     case 'danger':
-      return 'bg-red-500 hover:bg-red-600 text-white'
+      return 'bg-red-400 hover:bg-red-500 text-white'
     case 'warning':
-      return 'bg-yellow-500 hover:bg-yellow-600 text-black'
+      return 'bg-yellow-300 hover:bg-yellow-400 text-black'
     default:
       return 'bg-blue-300 hover:bg-blue-400 text-black'
   }

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 interface Props {
-  activePage?: 'playground' | 'dashboard' | 'snippets'
+  activePage?: 'playground' | 'dashboard' | 'snippets' | 'instant-api'
   hideActions?: boolean
 }
 
@@ -135,6 +135,20 @@ onUnmounted(() => {
               ]">
               <span class="flex items-center gap-2">
                 Playground
+              </span>
+            </NuxtLink>
+
+            <NuxtLink
+              v-if="isAuthenticated"
+              to="/instant-api"
+              :class="[
+                'px-2 py-1.5 text-xs rounded-lg font-medium transition-all',
+                activePage === 'instant-api'
+                  ? 'border border-gray-500/15 bg-gray-500/15 text-white'
+                  : 'border border-transparent bg-transparent text-gray-500 hover:bg-gray-500/10'
+              ]">
+              <span class="flex items-center gap-2">
+                Instant API
               </span>
             </NuxtLink>
 
