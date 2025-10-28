@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref } from 'vue'
 import { DoclePlayground } from '@doclehq/vue'
 
 useHead({
   title: 'Live Demo - Docle'
 })
 
-const route = useRoute()
-
-// Get API key from URL parameter or use default demo key
-const apiKey = computed(() => {
-  return route.query.key as string || ''
-})
+// This demo uses a server proxy endpoint (RECOMMENDED APPROACH)
+// Your API key stays secure on the server
+// This is exactly how customers should integrate Docle
+const endpoint = '/api/demo/run'
 
 // Demo code examples for different languages
 const pythonExample = `# Calculate Fibonacci sequence
@@ -65,16 +63,13 @@ const switchLanguage = (lang: 'python' | 'node') => {
   currentCode.value = lang === 'python' ? pythonExample : nodeExample
 }
 
-// Show API key warning if not provided
-const showApiKeyWarning = computed(() => !apiKey.value)
-
 // Handle execution events
 const handleRun = (result: any) => {
-  console.log('Execution result:', result)
+  console.log('✅ Execution result:', result)
 }
 
 const handleError = (error: any) => {
-  console.error('Execution error:', error)
+  console.error('❌ Execution error:', error)
 }
 </script>
 
@@ -111,17 +106,17 @@ const handleError = (error: any) => {
             Execute Python and Node.js code in secure sandboxes at the edge. Try it live below!
           </p>
           
-          <!-- API Key Warning -->
-          <div v-if="showApiKeyWarning" class="max-w-2xl mx-auto mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <!-- Info Banner -->
+          <div class="max-w-2xl mx-auto mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
             <div class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               <div class="text-left flex-1">
-                <p class="text-sm text-amber-300 font-medium mb-1">Demo Mode - Limited Functionality</p>
-                <p class="text-xs text-amber-400/80">
-                  This demo requires an API key to execute code. 
-                  <NuxtLink to="/login" class="underline hover:text-amber-300">Sign up free</NuxtLink> to get your API key, then add <code class="px-1.5 py-0.5 rounded bg-amber-500/20">?key=YOUR_API_KEY</code> to the URL.
+                <p class="text-sm text-blue-300 font-medium mb-1">Secure Integration Example</p>
+                <p class="text-xs text-blue-400/80">
+                  This demo uses a server proxy to keep API keys secure. This is the <span class="font-semibold">recommended approach</span> for production apps.
+                  <NuxtLink to="/snippets" class="underline hover:text-blue-300 ml-1">View code →</NuxtLink>
                 </p>
               </div>
             </div>
@@ -165,27 +160,14 @@ const handleError = (error: any) => {
         <!-- Playground -->
         <div class="max-w-5xl mx-auto">
           <DoclePlayground
-            v-if="apiKey"
             :lang="currentLang"
             :code="currentCode"
-            :api-key="apiKey"
+            :endpoint="endpoint"
             theme="dark"
             height="500px"
             @run="handleRun"
             @error="handleError"
           />
-          <div v-else class="bg-gray-500/10 border border-gray-500/20 rounded-lg p-12 text-center">
-            <svg class="w-16 h-16 mx-auto mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-            <h3 class="text-xl font-semibold text-white mb-2">API Key Required</h3>
-            <p class="text-gray-400 mb-4">Sign up for free to get your API key and try the playground</p>
-            <NuxtLink
-              to="/login"
-              class="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg border border-blue-300 bg-blue-300 text-black font-medium transition-all hover:bg-blue-400">
-              Get API Key Free
-            </NuxtLink>
-          </div>
         </div>
 
         <!-- Features Section -->
