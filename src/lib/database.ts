@@ -180,18 +180,44 @@ export async function validateApiKey(env: Env, key: string, origin?: string): Pr
   if (allowedDomains && allowedDomains.length > 0) {
     // If domains are restricted but no origin provided, reject the request
     if (!origin) {
+      console.log('[Domain Check] No origin provided, but domains are restricted:', allowedDomains);
       return null;
     }
 
-    const originHostname = new URL(origin).hostname;
-    const isAllowed = allowedDomains.some((domain: string) => {
-      // Support wildcard domains like *.example.com
-      if (domain.startsWith('*.')) {
-        const domainSuffix = domain.slice(2);
-        return originHostname === domainSuffix || originHostname.endsWith('.' + domainSuffix);
+    let originHostname: string;
+    try {
+      originHostname = new URL(origin).hostname;
+    } catch (e) {
+      // If origin is not a valid URL, try to extract hostname manually
+      console.log('[Domain Check] Failed to parse origin as URL:', origin);
+      const match = origin.match(/^https?:\/\/([^/:]+)/);
+      if (match) {
+        originHostname = match[1];
+      } else {
+        console.log('[Domain Check] Could not extract hostname from origin:', origin);
+        return null;
       }
-      return originHostname === domain;
+    }
+
+    console.log('[Domain Check] Origin hostname:', originHostname, 'Allowed domains:', allowedDomains);
+
+    const isAllowed = allowedDomains.some((domain: string) => {
+      const trimmedDomain = domain.trim();
+      
+      // Support wildcard domains like *.example.com
+      if (trimmedDomain.startsWith('*.')) {
+        const domainSuffix = trimmedDomain.slice(2);
+        const matches = originHostname === domainSuffix || originHostname.endsWith('.' + domainSuffix);
+        console.log('[Domain Check] Wildcard check:', trimmedDomain, 'vs', originHostname, '=', matches);
+        return matches;
+      }
+      
+      const matches = originHostname === trimmedDomain;
+      console.log('[Domain Check] Exact match check:', trimmedDomain, 'vs', originHostname, '=', matches);
+      return matches;
     });
+
+    console.log('[Domain Check] Final result:', isAllowed);
 
     if (!isAllowed) {
       return null;
