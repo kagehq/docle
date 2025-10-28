@@ -21,11 +21,8 @@ const config = useRuntimeConfig()
 
 const checkAuth = async () => {
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/dashboard'
-      : `${config.public.apiBase}/api/dashboard`
-
-    await $fetch(apiUrl, {
+    // Always use Nuxt proxy for cookie management
+    await $fetch('/api/dashboard', {
       credentials: 'include'
     })
     isAuthenticated.value = true
@@ -46,11 +43,8 @@ const checkAuth = async () => {
 // Get or create playground API key
 const getPlaygroundKey = async () => {
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/playground/key'
-      : `${config.public.apiBase}/api/playground/key`
-
-    const response: any = await $fetch(apiUrl, {
+    // Always use Nuxt proxy
+    const response: any = await $fetch('/api/playground/key', {
       method: 'POST',
       credentials: 'include'
     })
@@ -505,11 +499,8 @@ const runCode = async (isRetry = false) => {
       payload.packages = { packages: packages.value }
     }
 
-    // Use production API or local proxy
-    const config = useRuntimeConfig()
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/run'  // Use local proxy in development
-      : `${config.public.apiBase}/api/run`  // Use production API
+    // Always use Nuxt proxy
+    const apiUrl = '/api/run'
 
     // Show cold start message for first-time users
     if (retryCount.value === 0 && !history.value.length) {

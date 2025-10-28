@@ -44,11 +44,8 @@ useHead({
 // Load project data
 onMounted(async () => {
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/api/projects/${projectId}`
-
-    const response = await $fetch(apiUrl, {
+    // Always use Nuxt proxy
+    const response = await $fetch(`/api/projects/${projectId}`, {
       credentials: 'include'
     })
 
@@ -67,14 +64,11 @@ const handleCreateKey = async () => {
   creatingKey.value = true
 
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/projects/${projectId}/keys`
-      : `${config.public.apiBase}/api/projects/${projectId}/keys`
-
+    // Always use Nuxt proxy
     // Filter out empty domains
     const allowedDomains = newKeyDomains.value.filter(d => d.trim() !== '')
 
-    const response = await $fetch(apiUrl, {
+    const response = await $fetch(`/api/projects/${projectId}/keys`, {
       method: 'POST',
       credentials: 'include',
       body: {
@@ -92,11 +86,7 @@ const handleCreateKey = async () => {
     newKeyRateLimit.value = 60 // Reset to default
 
     // Reload the project data to get updated keys
-    const reloadUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/api/projects/${projectId}`
-
-    const updatedData = await $fetch(reloadUrl, {
+    const updatedData = await $fetch(`/api/projects/${projectId}`, {
       credentials: 'include'
     })
     apiKeys.value = updatedData.apiKeys || []
@@ -134,11 +124,8 @@ const revokeKey = async () => {
   if (!keyToRevoke.value) return
 
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/keys/${keyToRevoke.value}`
-      : `${config.public.apiBase}/api/keys/${keyToRevoke.value}`
-
-    await $fetch(apiUrl, {
+    // Always use Nuxt proxy
+    await $fetch(`/api/keys/${keyToRevoke.value}`, {
       method: 'DELETE',
       credentials: 'include'
     })
@@ -148,11 +135,7 @@ const revokeKey = async () => {
     keyToRevoke.value = null
 
     // Reload the project data
-    const reloadUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/api/projects/${projectId}`
-
-    const updatedData = await $fetch(reloadUrl, {
+    const updatedData = await $fetch(`/api/projects/${projectId}`, {
       credentials: 'include'
     })
     apiKeys.value = updatedData.apiKeys || []
@@ -172,11 +155,8 @@ const fetchUsageData = async () => {
 
   loadingUsage.value = true
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/projects/${projectId}/usage`
-      : `${config.public.apiBase}/api/projects/${projectId}/usage`
-
-    const response = await $fetch(apiUrl, {
+    // Always use Nuxt proxy
+    const response = await $fetch(`/api/projects/${projectId}/usage`, {
       credentials: 'include'
     })
 

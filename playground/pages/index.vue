@@ -31,12 +31,8 @@ const creatingProject = ref(false)
 // Load user and projects
 onMounted(async () => {
   try {
-    // Check auth
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/dashboard'
-      : `${config.public.apiBase}/api/dashboard`
-
-    const response = await $fetch<DashboardResponse>(apiUrl, {
+    // Check auth - always use Nuxt proxy
+    const response = await $fetch<DashboardResponse>('/api/dashboard', {
       credentials: 'include'
     })
 
@@ -61,11 +57,8 @@ const handleCreateProject = async () => {
   creatingProject.value = true
 
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/projects'
-      : `${config.public.apiBase}/api/projects`
-
-    const response = await $fetch(apiUrl, {
+    // Always use Nuxt proxy
+    const response = await $fetch('/api/projects', {
       method: 'POST',
       credentials: 'include',
       body: { name: newProjectName.value.trim() }

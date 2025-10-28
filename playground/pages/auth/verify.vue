@@ -18,18 +18,14 @@ onMounted(async () => {
   }
 
   try {
-    // Call backend API directly
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? `/api/auth/verify-token`  // Use Nuxt proxy in local dev
-      : `${config.public.apiBase}/auth/verify?token=${encodeURIComponent(token)}`;  // Direct backend call in production
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
+    // Always use Nuxt proxy for cookie management
+    const response = await fetch(`/api/auth/verify-token`, {
+      method: 'POST',
       headers: {
-        'accept-encoding': 'identity',
-        'x-nuxt-api': 'true'  // Tell backend this is an API call
+        'Content-Type': 'application/json',
       },
       credentials: 'include',
+      body: JSON.stringify({ token })
     });
 
     const data = await response.json();

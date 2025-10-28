@@ -15,11 +15,8 @@ const handleLogin = async () => {
   message.value = ''
 
   try {
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/auth/request'
-      : `${config.public.apiBase}/auth/request`
-
-    const response = await $fetch(apiUrl, {
+    // Always use Nuxt proxy for cookie management
+    const response = await $fetch('/api/auth/request', {
       method: 'POST',
       body: { email: email.value }
     })
