@@ -1,6 +1,6 @@
 {
   "name": "@doclehq/vue",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Vue 3 components for Docle embedded sandbox",
   "type": "module",
   "main": "./dist/index.js",
