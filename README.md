@@ -17,6 +17,7 @@ But running untrusted code is scary. Docle makes it safe and simple.
 - **Fast** - Runs on Cloudflare's edge network (<50ms latency)
 - **Secure** - Isolated sandboxes, can't touch your infrastructure  
 - **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
+- **Instant APIs** - Deploy code as API endpoints in seconds (no repos, no builds)
 - **Works everywhere** - React, Vue, vanilla JS, or REST API
 
 ## Get Started
@@ -134,6 +135,7 @@ npm install @doclehq/rate-limit # Per-user rate limiting helper
 | Guide | Description |
 |-------|-------------|
 | **[DETAILED.md](DETAILED.md)** | Complete API reference, authentication, rate limiting, analytics |
+| **[INSTANT_API.md](INSTANT_API.md)** | Deploy code as API endpoints - full guide |
 | **[React](packages/react/README.md)** | React hooks and components |
 | **[Vue](packages/vue/README.md)** | Vue composables and components |
 | **[SDK](sdk/README.md)** | TypeScript SDK for direct API integration |
@@ -144,6 +146,7 @@ npm install @doclehq/rate-limit # Per-user rate limiting helper
 
 ## Advanced Features
 
+- **Instant API Endpoints** - Deploy code as persistent APIs (no deployment pipeline)
 - **Usage analytics** - Detailed execution history and metrics  
 - **Rate limiting** - Per-API-key limits (1-10,000 req/min)
 - **Domain restrictions** - Whitelist origins per key
