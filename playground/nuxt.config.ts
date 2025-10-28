@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.docle.co',
-      demoApiKey: process.env.DEMO_API_KEY || ''
+      demoApiKey: process.env.NUXT_PUBLIC_DEMO_API_KEY || ''
     }
   },
 
