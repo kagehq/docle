@@ -16,55 +16,21 @@ const emit = defineEmits<{
   openSnippets: []
 }>()
 
-// Check if user is authenticated
-const isAuthenticated = ref(false)
-const userEmail = ref<string>('')
+// Use global auth state
+const { isAuthenticated, userEmail, checkAuth, logout: logoutAuth } = useAuth()
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
-
-const checkAuth = async () => {
-  if (typeof window === 'undefined') return
-  try {
-    const config = useRuntimeConfig()
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/dashboard'
-      : `${config.public.apiBase}/api/dashboard`
-
-    const response = await fetch(apiUrl, {
-      credentials: 'include'
-    })
-    if (!response.ok) {
-      isAuthenticated.value = false
-      userEmail.value = ''
-      return
-    }
-    const data = await response.json()
-    if (data.user && data.user.email) {
-      isAuthenticated.value = true
-      userEmail.value = data.user.email
-    } else {
-      isAuthenticated.value = false
-      userEmail.value = ''
-    }
-  } catch (error) {
-    isAuthenticated.value = false
-    userEmail.value = ''
-  }
-}
 
 // Handle logout
 const handleLogout = async () => {
   showUserMenu.value = false
   try {
-    const config = useRuntimeConfig()
-    const apiUrl = process.client && window.location.hostname === 'localhost'
-      ? '/api/logout'
-      : `${config.public.apiBase}/api/logout`
-
-    await fetch(apiUrl, {
+    await fetch('/api/logout', {
       method: 'POST',
       credentials: 'include'
     })
+    // Clear auth state
+    logoutAuth()
     // Redirect to login page
     window.location.href = '/login'
   } catch (error) {
