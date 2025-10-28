@@ -41,6 +41,13 @@ export function DoclePlayground({
 
     switch (type) {
       case 'docle-ready':
+        // Send API key to iframe when it's ready
+        if (apiKey) {
+          iframeRef.current?.contentWindow?.postMessage({ 
+            type: 'docle-set-apikey', 
+            apiKey: apiKey 
+          }, '*');
+        }
         onReady?.(data);
         break;
       case 'docle-result':
@@ -50,7 +57,7 @@ export function DoclePlayground({
         onError?.(data);
         break;
     }
-  }, [onReady, onRun, onError]);
+  }, [onReady, onRun, onError, apiKey]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
