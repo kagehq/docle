@@ -3,7 +3,7 @@ import type { DoclePlaygroundProps, DocleResult } from './types';
 
 /**
  * Embeddable code playground component
- * 
+ *
  * @example
  * ```tsx
  * <DoclePlayground
@@ -43,9 +43,9 @@ export function DoclePlayground({
       case 'docle-ready':
         // Send API key to iframe when it's ready
         if (apiKey) {
-          iframeRef.current?.contentWindow?.postMessage({ 
-            type: 'docle-set-apikey', 
-            apiKey: apiKey 
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'docle-set-apikey',
+            apiKey: apiKey
           }, '*');
         }
         onReady?.(data);
@@ -74,12 +74,12 @@ export function DoclePlayground({
     showOutput: String(showOutput),
     autorun: String(autorun)
   });
-  
+
   // Add API key if provided
   if (apiKey) {
     params.set('apiKey', apiKey);
   }
-  
+
   const src = `${baseUrl}/embed?${params}`;
 
   // Normalize height/width
@@ -87,7 +87,7 @@ export function DoclePlayground({
   const normalizedWidth = typeof width === 'number' ? `${width}px` : width;
 
   return (
-    <div 
+    <div
       className={className}
       style={{
         width: normalizedWidth,
