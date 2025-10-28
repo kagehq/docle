@@ -15,16 +15,17 @@ npm install @doclehq/sdk
 ```typescript
 import { runSandbox } from "@doclehq/sdk";
 
-// Use environment variables for security
 const result = await runSandbox("print('Hello, Docle!')", { 
   lang: "python",
-  apiKey: process.env.DOCLE_API_KEY
+  apiKey: process.env.DOCLE_API_KEY  // Store in .env file
 });
 
-console.log(result.stdout); // "Hello, Docle!\n"
-console.log(result.ok);     // true
+console.log(result.stdout);   // "Hello, Docle!\n"
+console.log(result.ok);       // true
 console.log(result.exitCode); // 0
 ```
+
+**Note:** Get your API key at [app.docle.co/login](https://app.docle.co/login) and add it to your `.env` file.
 
 ## API Reference
 
@@ -39,7 +40,13 @@ Executes code in a secure sandbox.
   - `apiKey` (string): Your Docle API key (get one at [app.docle.co](https://app.docle.co/login))
   - `policy?` (object): Execution policy
     - `timeoutMs?` (number): Max execution time in milliseconds (default: 5000)
-  - `endpoint?` (string): Custom API endpoint (default: 'https://api.docle.co')
+  - `endpoint?` (string): API endpoint (default: `/api/run`, or `window.DOCLE_ENDPOINT` if set)
+  - `userContext?` (object): Optional user context for tracking
+    - `id` (string): User identifier
+    - `email?` (string): User email
+    - `name?` (string): User name
+    - `tier?` ('free' | 'pro' | 'enterprise'): User tier
+    - `metadata?` (object): Additional metadata
 
 **Returns:** `Promise<DocleResult>`
 
@@ -56,6 +63,8 @@ interface DocleResult {
     durationMs?: number;
   };
   createdAt: string;
+  demo_mode?: boolean;       // Indicates if running in demo/public mode
+  upgrade_message?: string;  // Message about rate limits or upgrading
 }
 ```
 
@@ -167,11 +176,12 @@ export default defineEventHandler(async (event) => {
 
 ## Security Best Practices
 
-1. **Never expose API keys**: Always use environment variables
-2. **Server-side only**: Only use this SDK in server environments
-3. **Use domain restrictions**: Configure allowed domains in your [Docle dashboard](https://app.docle.co)
-4. **Set appropriate policies**: Configure timeouts and memory limits based on your needs
-5. **Handle errors**: Always check `result.ok` and `result.stderr` for error handling
+1. **Never expose API keys**: Always use environment variables and never commit them to version control
+2. **Server-side only**: This SDK should only be used in server environments (Node.js, Deno, Bun, Edge Functions, etc.)
+3. **Use domain restrictions**: Configure allowed domains in your [Docle dashboard](https://app.docle.co) for additional security
+4. **Set appropriate policies**: Configure timeouts based on your use case (default: 5000ms)
+5. **Handle errors gracefully**: Always check `result.ok` and handle `result.stderr` appropriately
+6. **Validate user input**: Sanitize and validate code before execution to prevent abuse
 
 ## Getting an API Key
 

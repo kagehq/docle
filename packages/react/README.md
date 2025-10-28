@@ -45,8 +45,8 @@ function App() {
 | `autorun` | `boolean` | `false` | Auto-run on mount |
 | `height` | `string` \| `number` | `'400px'` | Component height |
 | `width` | `string` \| `number` | `'100%'` | Component width |
-| `endpoint` | `string` | `'https://api.docle.co'` | Custom API endpoint (use your proxy) |
-| `apiKey` | `string` | `undefined` | ⚠️ **Deprecated** - Use server proxy instead |
+| `endpoint` | `string` | `'https://api.docle.co'` | Base URL where embed page is hosted |
+| `apiKey` | `string` | `undefined` | API key for authentication (requires domain restrictions) |
 | `onReady` | `(data) => void` | `undefined` | Callback when ready |
 | `onRun` | `(result) => void` | `undefined` | Callback after execution |
 | `onError` | `(error) => void` | `undefined` | Callback on error |
@@ -180,25 +180,65 @@ interface DocleRunOptions {
   policy?: {
     timeoutMs?: number;
   };
-  endpoint?: string;             // Your server proxy endpoint
-  apiKey?: string;               // ⚠️ Deprecated - Use server proxy
+  endpoint?: string;             // API endpoint (defaults to https://api.docle.co)
+  apiKey?: string;               // API key for authentication
+  userContext?: {                // Optional user tracking context
+    id: string;
+    email?: string;
+    name?: string;
+    tier?: 'free' | 'pro' | 'enterprise';
+    metadata?: Record<string, unknown>;
+  };
 }
 ```
 
 ---
 
-## Configuration
+## Security & Production Setup
 
-### API Authentication
+**⚠️ Important:** API keys should be protected. Choose the appropriate pattern for your use case:
 
-**⚠️ Security Warning:** Never expose API keys in client-side code! Choose one of these production patterns:
+### Option 1: Domain-Restricted API Keys (Recommended for DoclePlayground)
 
-#### Pattern 1: useDocle Hook + Server Proxy (Recommended for Custom UI)
-
-Build your own UI with the `useDocle` hook and proxy API calls through your server:
+Use `apiKey` with domain restrictions set in your [Docle dashboard](https://app.docle.co):
 
 ```tsx
-// app/api/docle/api/run/route.ts (Next.js 13+ API Route)
+import { DoclePlayground } from '@doclehq/react';
+import { useEffect, useState } from 'react';
+
+function App() {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+
+  // Fetch API key from your backend
+  useEffect(() => {
+    fetch('/api/demo-key')
+      .then(res => res.json())
+      .then(data => setApiKey(data.apiKey));
+  }, []);
+
+  if (!apiKey) return <div>Loading...</div>;
+
+  return (
+    <DoclePlayground
+      lang="python"
+      code="print('Hello, World!')"
+      apiKey={apiKey}
+    />
+  );
+}
+```
+
+This is secure when you:
+1. Set domain restrictions in your Docle dashboard
+2. Limit the key to specific allowed domains
+3. Fetch the key from your backend (don't hardcode it)
+
+### Option 2: Server Proxy (For useDocle + Custom UI)
+
+Build your own UI and proxy API calls through your backend:
+
+```tsx
+// app/api/docle/api/run/route.ts (Next.js 13+ App Router)
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
@@ -215,7 +255,9 @@ export async function POST(req: Request) {
   
   return NextResponse.json(await result.json());
 }
+```
 
+```tsx
 // Component.tsx
 import { useDocle } from '@doclehq/react';
 import { useState } from 'react';
@@ -236,57 +278,25 @@ function MyEditor() {
 }
 ```
 
-#### Pattern 2: DoclePlayground + Domain Restrictions (Recommended for Quick UI)
+### Understanding `endpoint`
 
-Use the built-in playground component with domain-restricted API keys:
+The `endpoint` prop behaves differently for each component:
 
-```tsx
-import { DoclePlayground } from '@doclehq/react';
-
-<DoclePlayground 
-  lang="python"
-  code="print('Hello!')"
-  apiKey="sk_live_YOUR_API_KEY"  // Configure domain restrictions in dashboard
-  onRun={(result) => console.log(result)}
-/>
-```
-
-**Set up domain restrictions:**
-1. Go to [app.docle.co](https://app.docle.co/login)
-2. Create an API key
-3. Add allowed domains (e.g., `yourdomain.com`, `*.yourdomain.com`)
-
-**Get your API key:** Sign up at [app.docle.co/login](https://app.docle.co/login) and add it to your `.env.local`:
-
-```bash
-DOCLE_API_KEY=sk_live_YOUR_API_KEY
-```
-
-### Custom Endpoint
-
-**Note:** The `endpoint` prop behavior differs between components:
-
-**DoclePlayground Component:**
-- Changes where the iframe embed loads from (for self-hosted Docle instances)
-- Does NOT proxy API calls
+| Component | Default | Purpose | Example |
+|-----------|---------|---------|---------|
+| **DoclePlayground** | `https://api.docle.co` | Base URL for iframe embed page | `https://app.docle.co` |
+| **useDocle** | `https://api.docle.co` | API endpoint for direct calls | `/api/docle` (your proxy) |
 
 ```tsx
-// For self-hosted Docle
+// For self-hosted Docle embed
 <DoclePlayground endpoint="https://docle.yourcompany.com" />
-```
 
-**useDocle Hook:**
-- Changes where API calls are sent (works with server proxies)
-- Appends `/api/run` to the endpoint
-
-```tsx
-// With your server proxy
+// For server proxy (appends /api/run automatically)
 const { run } = useDocle({ endpoint: '/api/docle' });
 // Makes: POST /api/docle/api/run
-
-// Or globally
-window.DOCLE_ENDPOINT = "https://api.docle.co";
 ```
+
+**Get your API key:** Sign up at [app.docle.co/login](https://app.docle.co/login)
 
 ### Styling
 

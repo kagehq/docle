@@ -50,8 +50,8 @@ const handleRun = (result) => {
 | `showOutput` | `boolean` | `true` | Show output panel |
 | `autorun` | `boolean` | `false` | Run code on mount |
 | `height` | `string` | `'400px'` | Component height |
-| `endpoint` | `string` | `'https://api.docle.co'` | Custom API endpoint (use your proxy) |
-| `apiKey` | `string` | `undefined` | ⚠️ **Deprecated** - Use server proxy instead |
+| `endpoint` | `string` | `window.location.origin` | Base URL where embed page is hosted |
+| `apiKey` | `string` | `undefined` | API key for authentication (requires domain restrictions) |
 
 ### Events
 
@@ -181,13 +181,39 @@ import type {
 </style>
 ```
 
-## Production Patterns
+## Security & Production Setup
 
-**⚠️ Security:** Never expose API keys in client-side code. Choose one of these patterns:
+**⚠️ Important:** API keys should be protected. Choose the appropriate pattern for your use case:
 
-### Pattern 1: useDocle + Server Proxy (Custom UI)
+### Option 1: Domain-Restricted API Keys (Recommended for DoclePlayground)
 
-Build your own UI and proxy API calls through your server:
+Use `api-key` with domain restrictions set in your [Docle dashboard](https://app.docle.co):
+
+```vue
+<script setup>
+import { DoclePlayground } from '@doclehq/vue';
+
+// Fetch API key from your backend
+const { data } = await useFetch('/api/demo-key');
+</script>
+
+<template>
+  <DoclePlayground
+    lang="python"
+    code="print('Hello, World!')"
+    :api-key="data.apiKey"
+  />
+</template>
+```
+
+This is secure when you:
+1. Set domain restrictions in your Docle dashboard
+2. Limit the key to specific allowed domains
+3. Fetch the key from your backend (don't hardcode it)
+
+### Option 2: Server Proxy (For useDocle + Custom UI)
+
+Build your own UI and proxy API calls through your backend:
 
 ```typescript
 // server/api/docle/api/run.post.ts (Nuxt 3)
@@ -212,10 +238,6 @@ import { useDocle } from '@doclehq/vue';
 
 const { run, result, loading } = useDocle({ endpoint: '/api/docle' });
 const code = ref('print("Hello!")');
-
-const handleRun = async () => {
-  await run(code.value, { lang: 'python' });
-};
 </script>
 
 <template>
@@ -227,52 +249,26 @@ const handleRun = async () => {
 </template>
 ```
 
-### Pattern 2: DoclePlayground + Domain Restrictions (Quick UI)
+### Understanding `endpoint`
 
-Use the built-in component with domain-restricted API keys:
+The `endpoint` prop behaves differently for each component:
+
+| Component | Default | Purpose | Example |
+|-----------|---------|---------|---------|
+| **DoclePlayground** | `window.location.origin` | Base URL for iframe embed page | `https://app.docle.co` |
+| **useDocle** | `/api/run` | API endpoint for direct calls | `/api/docle/api/run` (your proxy) |
 
 ```vue
+<!-- For self-hosted Docle embed -->
+<DoclePlayground endpoint="https://docle.yourcompany.com" />
+
+<!-- For server proxy -->
 <script setup>
-import { DoclePlayground } from '@doclehq/vue';
+const { run } = useDocle({ endpoint: '/api/docle/api/run' });
 </script>
-
-<template>
-  <DoclePlayground
-    lang="python"
-    code="print('Secure execution!')"
-    api-key="sk_live_YOUR_API_KEY"
-  />
-</template>
-```
-
-**Set up domain restrictions** in your [Docle dashboard](https://app.docle.co) to limit key usage to your domains.
-
-Add your API key to `.env`:
-```bash
-DOCLE_API_KEY=sk_live_YOUR_API_KEY
 ```
 
 **Get your API key:** Sign up at [app.docle.co/login](https://app.docle.co/login)
-
----
-
-### Endpoint Configuration
-
-**Note:** The `endpoint` prop works differently:
-
-- **DoclePlayground**: Changes iframe source (for self-hosted Docle)
-- **useDocle**: Changes API call destination (works with proxies)
-
-```vue
-<!-- Self-hosted Docle -->
-<DoclePlayground endpoint="https://docle.yourcompany.com" />
-
-<!-- Server proxy -->
-<script setup>
-const { run } = useDocle({ endpoint: '/api/docle' });
-// Makes: POST /api/docle/api/run
-</script>
-```
 
 ## License
 
