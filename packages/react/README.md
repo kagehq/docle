@@ -284,7 +284,7 @@ The `endpoint` prop behaves differently for each component:
 
 | Component | Default | Purpose | Example |
 |-----------|---------|---------|---------|
-| **DoclePlayground** | `https://api.docle.co` | Base URL for iframe embed page | `https://app.docle.co` |
+| **DoclePlayground** | `https://app.docle.co` | Base URL for iframe embed page | `https://app.docle.co` |
 | **useDocle** | `https://api.docle.co` | API endpoint for direct calls | `/api/docle` (your proxy) |
 
 ```tsx
@@ -323,6 +323,39 @@ See the [examples directory](../../examples/react/) for complete examples:
 - Interactive tutorials
 - Code challenges
 - Multi-language support
+
+---
+
+## Troubleshooting
+
+### Embed not loading / X-Frame-Options error
+
+If you see a console error like `Refused to display 'https://app.docle.co/' in a frame because it set 'X-Frame-Options' to 'sameorigin'`:
+
+1. **Make sure you're using the latest version:**
+   ```bash
+   npm install @doclehq/react@latest
+   ```
+
+2. **Don't specify the `endpoint` prop** - the default (`https://app.docle.co`) is already correct:
+   ```tsx
+   {/* ✅ Correct - uses default */}
+   <DoclePlayground lang="python" code="print('Hello')" />
+   
+   {/* ❌ Not needed */}
+   <DoclePlayground endpoint="https://app.docle.co" lang="python" />
+   ```
+
+3. **Clear your browser cache** with a hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+F5` (Windows)
+
+### API key not working
+
+Make sure you've set domain restrictions in your [Docle dashboard](https://app.docle.co) to allow your domain.
+
+### Need help?
+
+- [GitHub Issues](https://github.com/kagehq/docle/issues)
+- [Discord Community](https://discord.gg/KqdBcqRk5E)
 
 ---
 
