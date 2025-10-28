@@ -215,15 +215,14 @@ app.get("/auth/verify", async (c) => {
     const isApiCall = nuxtApiHeader === 'true';
 
     if (isApiCall) {
-      // Return JSON response with cookie set
+      // Return JSON response with session token for Nuxt proxy to set cookie
       return c.json({
         success: true,
+        sessionToken: session.token,
         user: {
           id: user.id,
           email: user.email
         }
-      }, 200, {
-        "Set-Cookie": cookieHeader,
       });
     } else {
       // Direct browser access - set cookie and redirect
