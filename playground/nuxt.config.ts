@@ -47,7 +47,7 @@ export default defineNuxtConfig({
       // Allow embed page to be loaded in iframes from any origin
       '/embed': {
         headers: {
-          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.docle.co ws://localhost:* wss://*; frame-src 'self' https://api.docle.co; frame-ancestors *;",
+          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.docle.co ws://localhost:* wss://*; frame-src 'self' https://api.docle.co; frame-ancestors *;",
           'X-Content-Type-Options': 'nosniff',
           'Referrer-Policy': 'strict-origin-when-cross-origin'
           // No X-Frame-Options - CSP frame-ancestors * allows all
@@ -56,7 +56,7 @@ export default defineNuxtConfig({
       // All other pages
       '/**': {
         headers: {
-          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.docle.co ws://localhost:* wss://*; frame-src 'self' https://api.docle.co; frame-ancestors 'self';",
+          'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.docle.co ws://localhost:* wss://*; frame-src 'self' https://api.docle.co; frame-ancestors 'self';",
           'X-Content-Type-Options': 'nosniff',
           'Referrer-Policy': 'strict-origin-when-cross-origin'
         }
