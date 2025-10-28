@@ -177,7 +177,12 @@ export async function validateApiKey(env: Env, key: string, origin?: string): Pr
   const allowedDomains = result.allowed_domains ? JSON.parse(result.allowed_domains) : null;
 
   // Check domain restrictions if configured
-  if (allowedDomains && allowedDomains.length > 0 && origin) {
+  if (allowedDomains && allowedDomains.length > 0) {
+    // If domains are restricted but no origin provided, reject the request
+    if (!origin) {
+      return null;
+    }
+
     const originHostname = new URL(origin).hostname;
     const isAllowed = allowedDomains.some((domain: string) => {
       // Support wildcard domains like *.example.com

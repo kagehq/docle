@@ -43,12 +43,12 @@ const iframeSrc = computed(() => {
     showOutput: String(props.showOutput),
     autorun: String(props.autorun)
   });
-  
+
   // Add API key if provided
   if (props.apiKey) {
     params.set('apiKey', props.apiKey);
   }
-  
+
   return `${baseUrl}/embed?${params.toString()}`;
 });
 
@@ -59,8 +59,15 @@ const handleMessage = (event: MessageEvent) => {
   }
 
   const { type, data } = event.data;
-  
+
   if (type === 'docle-ready') {
+    // Send API key to iframe when it's ready
+    if (props.apiKey) {
+      iframeRef.value?.contentWindow?.postMessage({
+        type: 'docle-set-apikey',
+        apiKey: props.apiKey
+      }, '*');
+    }
     emit('ready', data);
   } else if (type === 'docle-result') {
     emit('run', data);
