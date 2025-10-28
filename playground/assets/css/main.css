@@ -27,6 +27,31 @@ body, html {
 }
 
 
+/* Custom scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
 /* @media screen and (-webkit-min-device-pixel-ratio:0) and (max-device-width:1024px) */
 @media screen and (-webkit-min-device-pixel-ratio:0) and (max-device-width:1024px) { 
   select,

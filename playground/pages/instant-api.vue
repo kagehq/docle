@@ -86,7 +86,7 @@
             <div class="relative">
               <textarea
                 v-model="code"
-                class="w-full h-96 p-4 bg-black rounded-lg font-mono text-sm focus:outline-none resize-none"
+                class="w-full h-96 p-4 bg-black rounded-lg font-mono text-sm focus:outline-none resize-none scrollbar-thin scrollbar-track-black scrollbar-thumb-gray-700 hover:scrollbar-thumb-gray-600"
                 :placeholder="placeholderCode"
                 spellcheck="false"
               ></textarea>
@@ -110,7 +110,7 @@
 
         <!-- Right: My Endpoints -->
         <div class="lg:col-span-1">
-          <div class="bg-gray-500/10 rounded-lg border border-gray-500/10 p-6 sticky top-8">
+          <div class="bg-gray-500/10 rounded-lg border border-gray-500/10 p-6 sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <h2 class="text-xl font-semibold mb-4">My Endpoints</h2>
 
             <div v-if="loadingEndpoints" class="text-center py-8">
