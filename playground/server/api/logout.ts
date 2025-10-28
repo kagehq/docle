@@ -23,9 +23,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // Clear cookie on frontend
-  const isProduction = false; // Always false in dev
+  const isProduction = process.env.NODE_ENV === 'production';
   const cookieFlags = `HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Lax; Max-Age=0; Path=/`;
-
+  
   setHeader(event, 'set-cookie', `docle_session=; ${cookieFlags}`);
 
   return { success: true, message: 'Logged out successfully' };

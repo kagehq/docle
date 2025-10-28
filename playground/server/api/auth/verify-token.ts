@@ -31,8 +31,8 @@ export default defineEventHandler(async (event) => {
       const data = await response.json();
 
       if (data.success && data.sessionToken) {
-        // Set the session cookie on the frontend origin (localhost:3001)
-        const isProduction = false; // Always false in dev
+        // Set the session cookie
+        const isProduction = process.env.NODE_ENV === 'production';
         const cookieFlags = `HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`;
         const cookieHeader = `docle_session=${data.sessionToken}; ${cookieFlags}`;
 
