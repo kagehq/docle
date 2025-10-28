@@ -98,6 +98,14 @@ watch(() => props.code, (newCode) => {
   currentCode.value = newCode || '';
 });
 
+watch(() => props.lang, (newLang) => {
+  // Send language change to iframe
+  iframeRef.value?.contentWindow?.postMessage({ 
+    type: 'docle-set-lang', 
+    lang: newLang 
+  }, '*');
+});
+
 // Lifecycle
 onMounted(() => {
   window.addEventListener('message', handleMessage);

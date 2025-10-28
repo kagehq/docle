@@ -64,6 +64,26 @@ export function DoclePlayground({
     return () => window.removeEventListener('message', handleMessage);
   }, [handleMessage]);
 
+  // Send language change to iframe when lang prop changes
+  useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'docle-set-lang',
+        lang: lang
+      }, '*');
+    }
+  }, [lang]);
+
+  // Send code change to iframe when code prop changes
+  useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'docle-set-code',
+        code: code
+      }, '*');
+    }
+  }, [code]);
+
   // Build iframe URL
   const baseUrl = endpoint || (typeof window !== 'undefined' && (window as any).DOCLE_ENDPOINT) || 'https://api.docle.co';
   const params = new URLSearchParams({

@@ -169,7 +169,7 @@ onMounted(() => {
       return
     }
 
-    const { type, code: newCode, apiKey: newApiKey } = event.data
+    const { type, code: newCode, apiKey: newApiKey, lang: newLang } = event.data
 
     if (type === 'docle-set-apikey' && newApiKey) {
       // Parent provides API key
@@ -179,6 +179,10 @@ onMounted(() => {
       runCode()
     } else if (type === 'docle-set-code' && newCode) {
       code.value = newCode
+    } else if (type === 'docle-set-lang' && newLang) {
+      // Parent changes language
+      lang.value = newLang
+      console.log('Language changed to:', newLang)
     }
   })
 
