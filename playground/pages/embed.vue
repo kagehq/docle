@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 useHead({
   title: 'Embedded Playground - Docle'
@@ -21,12 +21,25 @@ const lastRunResult = ref<any>(null)
 const apiKey = ref<string | null>(null)
 const parentOrigin = ref<string>('*')
 
+// Default code examples
+const defaultCode = {
+  python: 'print("Hello from embedded Docle!")',
+  node: 'console.log("Hello from embedded Docle!");'
+}
+
 // Initialize code if empty
 if (!code.value) {
-  code.value = lang.value === 'python'
-    ? 'print("Hello from embedded Docle!")'
-    : 'console.log("Hello from embedded Docle!");'
+  code.value = defaultCode[lang.value]
 }
+
+// Watch for language changes and update code if it's still the default
+watch(lang, (newLang, oldLang) => {
+  // Only update code if it's still showing the default example for the old language
+  if (oldLang && code.value.trim() === defaultCode[oldLang].trim()) {
+    code.value = defaultCode[newLang]
+    output.value = '' // Clear output when switching languages
+  }
+})
 
 // Run code
 // Helper: Get friendly error message
