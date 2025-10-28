@@ -1,15 +1,33 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { DoclePlayground } from '@doclehq/vue'
 
 useHead({
   title: 'Live Demo - Docle'
 })
 
-// This demo uses a server proxy endpoint (RECOMMENDED APPROACH)
-// Your API key stays secure on the server
-// This is exactly how customers should integrate Docle
-const endpoint = '/api/demo/run'
+// For this demo, we're using the DoclePlayground component
+// which is an iframe-based playground component
+// This is perfect for quickly embedding a playground in any app
+
+// Get demo API key on mount
+const demoApiKey = ref<string | null>(null)
+const isLoadingKey = ref(true)
+
+onMounted(async () => {
+  try {
+    // In production, this would be your API key from environment variables
+    // For this demo, we fetch the playground key
+    const response = await $fetch('/api/playground/key', {
+      method: 'POST'
+    })
+    demoApiKey.value = response.apiKey
+  } catch (error) {
+    console.error('Failed to get demo API key:', error)
+  } finally {
+    isLoadingKey.value = false
+  }
+})
 
 // Demo code examples for different languages
 const pythonExample = `# Calculate Fibonacci sequence
@@ -105,7 +123,7 @@ const handleError = (error: any) => {
           <p class="text-lg text-gray-400 mb-6 max-w-2xl mx-auto">
             Execute Python and Node.js code in secure sandboxes at the edge. Try it live below!
           </p>
-          
+
           <!-- Info Banner -->
           <div class="max-w-2xl mx-auto mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
             <div class="flex items-start gap-3">
@@ -113,10 +131,10 @@ const handleError = (error: any) => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               <div class="text-left flex-1">
-                <p class="text-sm text-blue-300 font-medium mb-1">Secure Integration Example</p>
+                <p class="text-sm text-blue-300 font-medium mb-1">Drop-in Playground Component</p>
                 <p class="text-xs text-blue-400/80">
-                  This demo uses a server proxy to keep API keys secure. This is the <span class="font-semibold">recommended approach</span> for production apps.
-                  <NuxtLink to="/snippets" class="underline hover:text-blue-300 ml-1">View code →</NuxtLink>
+                  This demo uses the <code class="px-1 py-0.5 rounded bg-blue-500/20">DoclePlayground</code> component for quick embedding. 
+                  <NuxtLink to="/snippets" class="underline hover:text-blue-300 ml-1">View integration options →</NuxtLink>
                 </p>
               </div>
             </div>
@@ -159,15 +177,32 @@ const handleError = (error: any) => {
 
         <!-- Playground -->
         <div class="max-w-5xl mx-auto">
+          <!-- Loading State -->
+          <div v-if="isLoadingKey" class="bg-gray-500/10 border border-gray-500/20 rounded-lg p-12 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading playground...</p>
+          </div>
+
+          <!-- Playground -->
           <DoclePlayground
+            v-else-if="demoApiKey"
             :lang="currentLang"
             :code="currentCode"
-            :endpoint="endpoint"
+            :api-key="demoApiKey"
             theme="dark"
             height="500px"
             @run="handleRun"
             @error="handleError"
           />
+
+          <!-- Error State -->
+          <div v-else class="bg-gray-500/10 border border-gray-500/20 rounded-lg p-12 text-center">
+            <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 class="text-xl font-semibold text-white mb-2">Failed to Load Playground</h3>
+            <p class="text-gray-400 mb-4">Please try refreshing the page</p>
+          </div>
         </div>
 
         <!-- Features Section -->

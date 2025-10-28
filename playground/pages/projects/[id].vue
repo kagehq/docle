@@ -46,7 +46,7 @@ onMounted(async () => {
   try {
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/projects/${projectId}`
+      : `${config.public.apiBase}/api/projects/${projectId}`
 
     const response = await $fetch(apiUrl, {
       credentials: 'include'
@@ -69,7 +69,7 @@ const handleCreateKey = async () => {
   try {
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/projects/${projectId}/keys`
-      : `${config.public.apiBase}/projects/${projectId}/keys`
+      : `${config.public.apiBase}/api/projects/${projectId}/keys`
 
     // Filter out empty domains
     const allowedDomains = newKeyDomains.value.filter(d => d.trim() !== '')
@@ -94,7 +94,7 @@ const handleCreateKey = async () => {
     // Reload the project data to get updated keys
     const reloadUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/projects/${projectId}`
+      : `${config.public.apiBase}/api/projects/${projectId}`
 
     const updatedData = await $fetch(reloadUrl, {
       credentials: 'include'
@@ -136,7 +136,7 @@ const revokeKey = async () => {
   try {
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/keys/${keyToRevoke.value}`
-      : `${config.public.apiBase}/keys/${keyToRevoke.value}`
+      : `${config.public.apiBase}/api/keys/${keyToRevoke.value}`
 
     await $fetch(apiUrl, {
       method: 'DELETE',
@@ -150,7 +150,7 @@ const revokeKey = async () => {
     // Reload the project data
     const reloadUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/projects/${projectId}`
-      : `${config.public.apiBase}/projects/${projectId}`
+      : `${config.public.apiBase}/api/projects/${projectId}`
 
     const updatedData = await $fetch(reloadUrl, {
       credentials: 'include'
@@ -174,7 +174,7 @@ const fetchUsageData = async () => {
   try {
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? `/api/projects/${projectId}/usage`
-      : `${config.public.apiBase}/projects/${projectId}/usage`
+      : `${config.public.apiBase}/api/projects/${projectId}/usage`
 
     const response = await $fetch(apiUrl, {
       credentials: 'include'

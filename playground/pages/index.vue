@@ -34,7 +34,7 @@ onMounted(async () => {
     // Check auth
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? '/api/dashboard'
-      : `${config.public.apiBase}/dashboard`
+      : `${config.public.apiBase}/api/dashboard`
 
     const response = await $fetch<DashboardResponse>(apiUrl, {
       credentials: 'include'
@@ -63,7 +63,7 @@ const handleCreateProject = async () => {
   try {
     const apiUrl = process.client && window.location.hostname === 'localhost'
       ? '/api/projects'
-      : `${config.public.apiBase}/projects`
+      : `${config.public.apiBase}/api/projects`
 
     const response = await $fetch(apiUrl, {
       method: 'POST',

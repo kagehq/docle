@@ -25,7 +25,12 @@ const userMenuRef = ref<HTMLElement | null>(null)
 const checkAuth = async () => {
   if (typeof window === 'undefined') return
   try {
-    const response = await fetch('/api/dashboard', {
+    const config = useRuntimeConfig()
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? '/api/dashboard'
+      : `${config.public.apiBase}/api/dashboard`
+
+    const response = await fetch(apiUrl, {
       credentials: 'include'
     })
     if (!response.ok) {
@@ -51,7 +56,12 @@ const checkAuth = async () => {
 const handleLogout = async () => {
   showUserMenu.value = false
   try {
-    await fetch('/api/logout', {
+    const config = useRuntimeConfig()
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? '/api/logout'
+      : `${config.public.apiBase}/api/logout`
+
+    await fetch(apiUrl, {
       method: 'POST',
       credentials: 'include'
     })

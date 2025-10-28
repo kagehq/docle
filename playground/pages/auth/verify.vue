@@ -5,6 +5,7 @@ useHead({
 
 const route = useRoute();
 const router = useRouter();
+const config = useRuntimeConfig();
 
 // Get the token from URL
 const token = route.query.token as string;
@@ -17,21 +18,24 @@ onMounted(async () => {
   }
 
   try {
-    // Call the backend directly through the proxy
-    const response = await fetch(`/api/auth/verify-token`, {
-      method: 'POST',
+    // Call backend API directly
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? `/api/auth/verify-token`  // Use Nuxt proxy in local dev
+      : `${config.public.apiBase}/auth/verify?token=${encodeURIComponent(token)}`;  // Direct backend call in production
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'accept-encoding': 'identity',
+        'x-nuxt-api': 'true'  // Tell backend this is an API call
       },
-      body: JSON.stringify({ token }),
       credentials: 'include',
     });
 
     const data = await response.json();
 
     if (response.ok && data.success) {
-      // Wait a moment for cookie to be set
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Cookie is set by backend, redirect immediately
       router.push('/');
     } else {
       router.push('/login?error=' + (data.error || 'invalid'));

@@ -65,12 +65,17 @@ app.use("*", cors({
       return origin || '*';
     }
 
+    // Allow Cloudflare Pages preview URLs (e.g., https://abc123.docle.pages.dev)
+    if (origin && origin.match(/^https:\/\/[a-f0-9]+\.docle\.pages\.dev$/)) {
+      return origin;
+    }
+
     // Default: deny
     return allowedOrigins[0];
   },
   credentials: true,
   allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'x-nuxt-api', 'accept-encoding'],
   exposeHeaders: ['Content-Length', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
   maxAge: 600
 }));
@@ -200,26 +205,28 @@ app.get("/auth/verify", async (c) => {
   // Create session
   const session = await createSession(c.env, user.id);
 
+    // Always set the cookie (important for production static deployments)
+    const isProduction = c.env.APP_URL?.startsWith('https://');
+    const cookieFlags = `HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=None; Max-Age=${30 * 24 * 60 * 60}; Path=/`;
+    const cookieHeader = `docle_session=${session.token}; ${cookieFlags}`;
+
     // Check if this is an API call (from Nuxt server) or direct browser access
     const nuxtApiHeader = c.req.header('x-nuxt-api') || c.req.header('X-Nuxt-Api');
     const isApiCall = nuxtApiHeader === 'true';
 
     if (isApiCall) {
-      // Return session token in response body for Nuxt server to set as cookie
+      // Return JSON response with cookie set
       return c.json({
         success: true,
-        sessionToken: session.token,
         user: {
           id: user.id,
           email: user.email
         }
+      }, 200, {
+        "Set-Cookie": cookieHeader,
       });
     } else {
       // Direct browser access - set cookie and redirect
-      const isProduction = c.env.APP_URL?.startsWith('https://');
-      const cookieFlags = `HttpOnly; ${isProduction ? 'Secure; ' : ''}SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}; Path=/`;
-      const cookieHeader = `docle_session=${session.token}; ${cookieFlags}`;
-
       return c.redirect(`${c.env.APP_URL || "http://localhost:3001"}/`, 302, {
         "Set-Cookie": cookieHeader,
       });
@@ -670,7 +677,7 @@ async function sendEmail(env: Env, email: string, verifyUrl: string): Promise<vo
     throw new Error('RESEND_API_KEY not configured');
   }
 
-  const emailFrom = env.EMAIL_FROM || 'Docle <onboarding@docle.co>';
+  const emailFrom = env.EMAIL_FROM || 'Docle <noreply@docle.co>';
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -690,7 +697,7 @@ async function sendEmail(env: Env, email: string, verifyUrl: string): Promise<vo
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
           <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #000000;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; padding: 40px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td align="center">
                   <table width="600" cellpadding="0" cellspacing="0" style="background-color: #111111; border-radius: 8px; border: 1px solid #222222;">
@@ -700,7 +707,7 @@ async function sendEmail(env: Env, email: string, verifyUrl: string): Promise<vo
                         <table width="100%" cellpadding="0" cellspacing="0">
                           <tr>
                             <td align="center" style="padding-bottom: 30px;">
-                              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">⚡ Docle</h1>
+                              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">Docle</h1>
                               <p style="margin: 10px 0 0 0; color: #999999; font-size: 14px;">Run code safely in the cloud</p>
                             </td>
                           </tr>

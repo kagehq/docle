@@ -1,11 +1,16 @@
 <script setup lang="ts">
 const apiStatus = ref<'operational' | 'degraded' | 'down'>('operational')
 const checking = ref(false)
+const config = useRuntimeConfig()
 
 const checkStatus = async () => {
   checking.value = true
   try {
-    const response = await fetch('http://localhost:8787/health', {
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? 'http://localhost:8787/'
+      : `${config.public.apiBase}/`
+
+    const response = await fetch(apiUrl, {
       method: 'GET',
       signal: AbortSignal.timeout(5000)
     })

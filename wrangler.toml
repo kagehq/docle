@@ -39,9 +39,26 @@ APP_URL = "http://localhost:3001"
 # Set secrets: npx wrangler secret put RESEND_API_KEY --env production
 [env.production]
 [env.production.vars]
-APP_URL = "https://app.docle.co"  # Update with your production frontend URL
-EMAIL_FROM = "Docle <noreply@docle.co>"  # Update with your verified domain
+APP_NAME = "Docle"
+APP_URL = "https://app.docle.co"
+EMAIL_FROM = "Docle <noreply@docle.co>"
 # RESEND_API_KEY should be set via: npx wrangler secret put RESEND_API_KEY --env production
+
+# Production uses same KV namespace
+[[env.production.kv_namespaces]]
+binding = "RUNS"
+id = "809528141f1a4f7b89c7d84499ee8c77"
+
+# Production uses same D1 database
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "docle-db"
+database_id = "c112bafc-9782-44be-8e29-ea4979843c14"
+
+# Production Durable Objects
+[[env.production.durable_objects.bindings]]
+name = "COLLAB_SESSION"
+class_name = "CollabSession"
 
 # ============================================================================
 # ADVANCED: Cloudflare Sandbox with Containers (Optional - Not currently used)

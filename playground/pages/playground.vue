@@ -17,10 +17,15 @@ const isCollabMode = computed(() => !!sessionId.value)
 // Check if user is authenticated
 const isAuthenticated = ref(false)
 const playgroundApiKey = ref<string | null>(null)
+const config = useRuntimeConfig()
 
 const checkAuth = async () => {
   try {
-    await $fetch('/api/dashboard', {
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? '/api/dashboard'
+      : `${config.public.apiBase}/api/dashboard`
+
+    await $fetch(apiUrl, {
       credentials: 'include'
     })
     isAuthenticated.value = true
@@ -41,7 +46,11 @@ const checkAuth = async () => {
 // Get or create playground API key
 const getPlaygroundKey = async () => {
   try {
-    const response: any = await $fetch('/api/playground/key', {
+    const apiUrl = process.client && window.location.hostname === 'localhost'
+      ? '/api/playground/key'
+      : `${config.public.apiBase}/api/playground/key`
+
+    const response: any = await $fetch(apiUrl, {
       method: 'POST',
       credentials: 'include'
     })
