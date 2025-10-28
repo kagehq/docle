@@ -43,7 +43,7 @@ echo "${BLUE}🎨 Building Frontend...${NC}"
 echo ""
 
 cd playground
-npm run generate
+npm run build
 
 if [ $? -eq 0 ]; then
   echo ""

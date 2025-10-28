@@ -8,8 +8,8 @@ echo ""
 
 cd playground
 
-echo "📦 Generating static site..."
-npm run generate
+echo "📦 Building (this may take a minute)..."
+npm run build
 
 if [ $? -ne 0 ]; then
   echo "❌ Build failed!"
