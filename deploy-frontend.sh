@@ -18,7 +18,7 @@ fi
 
 echo ""
 echo "🌐 Deploying to Pages..."
-npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true --compatibility-flag=nodejs_compat
+npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true
 
 if [ $? -eq 0 ]; then
   echo ""
