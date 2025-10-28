@@ -57,7 +57,7 @@ echo ""
 echo "${BLUE}🌐 Deploying Frontend to Pages...${NC}"
 echo ""
 
-npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true
+npx wrangler pages deploy dist --project-name=docle --commit-dirty=true
 
 if [ $? -eq 0 ]; then
   echo ""

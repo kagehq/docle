@@ -8,8 +8,8 @@ echo ""
 
 cd playground
 
-echo "📦 Building..."
-npm run build
+echo "📦 Generating static site..."
+npm run generate
 
 if [ $? -ne 0 ]; then
   echo "❌ Build failed!"
@@ -18,7 +18,7 @@ fi
 
 echo ""
 echo "🌐 Deploying to Pages..."
-npx wrangler pages deploy .output/public --project-name=docle --commit-dirty=true
+npx wrangler pages deploy dist --project-name=docle --commit-dirty=true
 
 if [ $? -eq 0 ]; then
   echo ""
