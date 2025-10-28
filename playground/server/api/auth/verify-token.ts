@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend with the token as query param
-  const backendUrl = `http://localhost:8787/auth/verify?token=${encodeURIComponent(token)}`;
+  const backendUrl = `${getBackendUrl()}/auth/verify?token=${encodeURIComponent(token)}`;
 
   try {
     const response = await fetch(backendUrl, {

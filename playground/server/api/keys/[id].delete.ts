@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend
-  const backendUrl = `http://localhost:8787/api/keys/${id}`
+  const backendUrl = `${getBackendUrl()}/api/keys/${id}`
   try {
     const response = await fetch(backendUrl, {
       method: 'DELETE',

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend
-  const backendUrl = `http://localhost:8787/api/e/${id}`;
+  const backendUrl = `${getBackendUrl()}/api/e/${id}`;
 
   // Build query string
   const queryString = new URLSearchParams(query as any).toString();

@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   // Forward to backend
-  const backendUrl = `http://localhost:8787/api/projects/${id}/keys`
+  const backendUrl = `${getBackendUrl()}/api/projects/${id}/keys`
 
   try {
     const response = await fetch(backendUrl, {

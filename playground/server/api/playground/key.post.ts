@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend
-  const backendUrl = `http://localhost:8787/api/playground/key`
+  const backendUrl = `${getBackendUrl()}/api/playground/key`
 
   try {
     const response = await fetch(backendUrl, {

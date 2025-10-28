@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend with cookie
-  const backendUrl = 'http://localhost:8787/api/endpoints';
+  const backendUrl = `${getBackendUrl()}/api/endpoints`;
 
   try {
     const response = await fetch(backendUrl, {

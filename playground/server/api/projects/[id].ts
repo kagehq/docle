@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Forward to backend
-  const backendUrl = `http://localhost:8787/api/projects/${id}`
+  const backendUrl = `${getBackendUrl()}/api/projects/${id}`
 
   try {
     const response = await fetch(backendUrl, {

@@ -7,7 +7,9 @@
     "dev": "nuxt dev --port 3001",
     "build": "nuxt build",
     "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "preview": "nuxt preview",
+    "clean": "rm -rf .nuxt .output node_modules/.cache",
+    "fresh": "npm run clean && npm install && npm run dev"
   },
   "dependencies": {
     "nuxt": "^3.13.0",
