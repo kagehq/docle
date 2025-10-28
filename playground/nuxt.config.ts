@@ -12,7 +12,8 @@ export default defineNuxtConfig({
   // Runtime config for API endpoint
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.docle.co'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.docle.co',
+      demoApiKey: process.env.DEMO_API_KEY || ''
     }
   },
 

@@ -16,11 +16,8 @@ const isLoadingKey = ref(true)
 
 onMounted(async () => {
   try {
-    // In production, this would be your API key from environment variables
-    // For this demo, we fetch the playground key
-    const response = await $fetch('/api/playground/key', {
-      method: 'POST'
-    })
+    // Get demo API key from public endpoint
+    const response = await $fetch('/api/demo-key')
     demoApiKey.value = response.apiKey
   } catch (error) {
     console.error('Failed to get demo API key:', error)
@@ -133,7 +130,7 @@ const handleError = (error: any) => {
               <div class="text-left flex-1">
                 <p class="text-sm text-blue-300 font-medium mb-1">Drop-in Playground Component</p>
                 <p class="text-xs text-blue-400/80">
-                  This demo uses the <code class="px-1 py-0.5 rounded bg-blue-500/20">DoclePlayground</code> component for quick embedding. 
+                  This demo uses the <code class="px-1 py-0.5 rounded bg-blue-500/20">DoclePlayground</code> component for quick embedding.
                   <NuxtLink to="/snippets" class="underline hover:text-blue-300 ml-1">View integration options →</NuxtLink>
                 </p>
               </div>
