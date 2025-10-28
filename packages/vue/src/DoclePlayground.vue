@@ -34,7 +34,7 @@ const currentCode = ref(props.code);
 
 // Compute iframe src URL
 const iframeSrc = computed(() => {
-  const baseUrl = props.endpoint || window.location.origin;
+  const baseUrl = props.endpoint || 'https://app.docle.co';
   const params = new URLSearchParams({
     lang: props.lang,
     theme: props.theme,

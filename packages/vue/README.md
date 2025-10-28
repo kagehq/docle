@@ -50,7 +50,7 @@ const handleRun = (result) => {
 | `showOutput` | `boolean` | `true` | Show output panel |
 | `autorun` | `boolean` | `false` | Run code on mount |
 | `height` | `string` | `'400px'` | Component height |
-| `endpoint` | `string` | `window.location.origin` | Base URL where embed page is hosted |
+| `endpoint` | `string` | `'https://app.docle.co'` | Base URL where embed page is hosted |
 | `apiKey` | `string` | `undefined` | API key for authentication (requires domain restrictions) |
 
 ### Events
@@ -255,7 +255,7 @@ The `endpoint` prop behaves differently for each component:
 
 | Component | Default | Purpose | Example |
 |-----------|---------|---------|---------|
-| **DoclePlayground** | `window.location.origin` | Base URL for iframe embed page | `https://app.docle.co` |
+| **DoclePlayground** | `https://app.docle.co` | Base URL for iframe embed page | `https://app.docle.co` |
 | **useDocle** | `/api/run` | API endpoint for direct calls | `/api/docle/api/run` (your proxy) |
 
 ```vue
