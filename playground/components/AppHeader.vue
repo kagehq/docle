@@ -157,7 +157,7 @@ onUnmounted(() => {
           </button>
 
           <!-- Separator only shown when user is authenticated -->
-          <span v-if="isAuthenticated" class="text-gray-500/50 text-sm">|</span>
+          <!-- <span v-if="isAuthenticated" class="text-gray-500/50 text-sm">|</span> -->
 
           <!-- Show user menu if authenticated -->
           <template v-if="isAuthenticated">
