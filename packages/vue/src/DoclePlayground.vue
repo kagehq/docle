@@ -100,9 +100,9 @@ watch(() => props.code, (newCode) => {
 
 watch(() => props.lang, (newLang) => {
   // Send language change to iframe
-  iframeRef.value?.contentWindow?.postMessage({ 
-    type: 'docle-set-lang', 
-    lang: newLang 
+  iframeRef.value?.contentWindow?.postMessage({
+    type: 'docle-set-lang',
+    lang: newLang
   }, '*');
 });
 

@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-10-01',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
-  
+
   // Global CSS
   css: [
     '~/assets/css/main.css'
@@ -21,7 +21,7 @@ export default defineNuxtConfig({
   nitro: {
     // Use Cloudflare Pages preset for server routes support
     preset: 'cloudflare-pages',
-    
+
     // API proxy to your Worker (for local development)
     devProxy: {
       // Proxy specific backend endpoints only
@@ -34,7 +34,7 @@ export default defineNuxtConfig({
         }
       }
     },
-    
+
     // Security headers
     routeRules: {
       // Allow embed page to be loaded in iframes
