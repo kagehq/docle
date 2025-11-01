@@ -1301,7 +1301,7 @@ const getStatusColor = () => {
                   </p>
                 </div>
                 <p v-else class="text-xs text-gray-500 mt-2">
-                  Paste any public GitHub repo. Language & entrypoint auto-detected.
+                  Runs scripts from any public repo (e.g., Python/Node.js files). Shows console output, not a live deployment.
                 </p>
               </div>
 
