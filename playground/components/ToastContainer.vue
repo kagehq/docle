@@ -17,13 +17,13 @@ const getIcon = (type: string) => {
 const getColorClasses = (type: string) => {
   switch (type) {
     case 'success':
-      return 'bg-green-300/10 border-green-300/10 text-green-300'
+      return 'bg-black border-gray-500/20 text-green-300'
     case 'error':
-      return 'bg-red-400/10 border-red-400/10 text-red-400'
+      return 'bg-black border-gray-500/20 text-red-400'
     case 'warning':
-      return 'bg-yellow-300/10 border-yellow-300/10 text-yellow-300'
+      return 'bg-black border-gray-500/20 text-yellow-300'
     default:
-      return 'bg-blue-300/10 border-blue-300/10 text-blue-300'
+      return 'bg-black border-gray-500/20 text-blue-300'
   }
 }
 </script>
@@ -38,11 +38,11 @@ const getColorClasses = (type: string) => {
         v-for="toast in toasts"
         :key="toast.id"
         :class="[
-          'pointer-events-auto flex items-start gap-3 min-w-[320px] max-w-md p-4 rounded-lg border backdrop-blur-sm',
+          'pointer-events-auto flex items-start gap-3 min-w-[320px] max-w-md p-3 rounded-lg border backdrop-blur-sm',
           getColorClasses(toast.type)
         ]">
         <svg
-          class="w-5 h-5 flex-shrink-0 mt-0.5"
+          class="w-4 h-4 flex-shrink-0 mt-0.5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -51,7 +51,7 @@ const getColorClasses = (type: string) => {
         <p class="flex-1 text-sm font-medium">{{ toast.message }}</p>
         <button
           @click="remove(toast.id)"
-          class="flex-shrink-0 text-current opacity-50 hover:opacity-100 transition-opacity">
+          class="flex-shrink-0 text-current opacity-50 hover:opacity-100 transition-opacity mt-0.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>

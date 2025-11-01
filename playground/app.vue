@@ -28,7 +28,7 @@ provide('openSnippetsPanel', openSnippetsPanel)
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -55,16 +55,16 @@ provide('openSnippetsPanel', openSnippetsPanel)
 
 /* Smooth focus outlines */
 *:focus-visible {
-  outline: 2px solid #00DC82;
+  outline: 2px solid #93c5fd;
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /* Selection color */
-::selection {
+/* ::selection {
   background-color: rgba(0, 220, 130, 0.3);
   color: inherit;
-}
+} */
 
 /* Global transitions */
 * {

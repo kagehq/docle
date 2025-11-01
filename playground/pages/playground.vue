@@ -74,7 +74,7 @@ const getPlaygroundKey = async () => {
 const { success: showSuccess, info: showInfo } = useToast()
 
 // UI State
-const activeTab = ref<'editor' | 'files' | 'packages' | 'history'>('editor')
+const activeTab = ref<'editor' | 'files' | 'packages' | 'settings' | 'history'>('editor')
 const isMultiFile = ref(false)
 const showSettings = ref(true)
 
@@ -94,6 +94,12 @@ const code = computed({
 const lang = ref<'python' | 'node'>('python')
 const timeout = ref(3000)
 
+// NEW: GitHub Repo & Network Controls
+const repoUrl = ref('')
+const allowNetwork = ref(false)
+const allowedHosts = ref('')
+const maxOutputBytes = ref(1048576) // 1MB default
+
 // Packages
 const packages = ref<string[]>([])
 const newPackage = ref('')
@@ -112,6 +118,10 @@ const saveDraft = () => {
     lang: lang.value,
     timeout: timeout.value,
     packages: packages.value,
+    repoUrl: repoUrl.value,
+    allowNetwork: allowNetwork.value,
+    allowedHosts: allowedHosts.value,
+    maxOutputBytes: maxOutputBytes.value,
     timestamp: new Date().toISOString()
   }
 
@@ -138,6 +148,10 @@ const restoreDraft = () => {
       lang.value = draft.lang || 'python'
       timeout.value = draft.timeout || 3000
       packages.value = draft.packages || []
+      repoUrl.value = draft.repoUrl || ''
+      allowNetwork.value = draft.allowNetwork || false
+      allowedHosts.value = draft.allowedHosts || ''
+      maxOutputBytes.value = draft.maxOutputBytes || 1048576
       lastSaved.value = savedTime
       return true
     }
@@ -157,7 +171,7 @@ const debouncedSave = () => {
 }
 
 // Watch for changes and autosave
-watch([code, lang, timeout, packages], () => {
+watch([code, lang, timeout, packages, repoUrl, allowNetwork, allowedHosts, maxOutputBytes], () => {
   debouncedSave()
 }, { deep: true })
 
@@ -488,15 +502,39 @@ const runCode = async (isRetry = false) => {
       }
     }
 
-    if (isMultiFile.value && files.value.length > 1) {
-      payload.files = files.value.map(f => ({ path: f.name, content: f.content }))
-      payload.entrypoint = files.value[0].name
+    // GitHub Repo Mode
+    if (repoUrl.value.trim()) {
+      payload.repo = repoUrl.value.trim()
+      // Language is auto-detected when repo is provided
+      delete payload.lang
     } else {
-      payload.code = code.value
+      // Regular code mode
+      if (isMultiFile.value && files.value.length > 1) {
+        payload.files = files.value.map(f => ({ path: f.name, content: f.content }))
+        payload.entrypoint = files.value[0].name
+      } else {
+        payload.code = code.value
+      }
     }
 
     if (packages.value.length > 0) {
       payload.packages = { packages: packages.value }
+    }
+
+    // Network Access Controls
+    if (allowNetwork.value) {
+      payload.policy.allowNetwork = true
+      if (allowedHosts.value.trim()) {
+        const hosts = allowedHosts.value.split('\n').map(h => h.trim()).filter(h => h.length > 0)
+        if (hosts.length > 0) {
+          payload.policy.allowedHosts = hosts
+        }
+      }
+    }
+
+    // Output Size Limit
+    if (maxOutputBytes.value && maxOutputBytes.value !== 1048576) {
+      payload.policy.maxOutputBytes = maxOutputBytes.value
     }
 
     // Always use Nuxt proxy
@@ -905,7 +943,32 @@ const getStatusColor = () => {
               </button>
             </div>
 
+            <!-- GitHub Repo Mode Notice -->
+            <div v-if="repoUrl.trim()" class="flex-1 flex items-center justify-center bg-black p-8">
+              <div class="text-center max-w-md">
+                <svg class="w-16 h-16 mx-auto mb-4 text-blue-300" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <h3 class="text-lg font-semibold text-white mb-2">GitHub Repository Mode</h3>
+                <p class="text-sm text-gray-400 mb-3">Ready to execute:</p>
+                <code class="px-3 py-1.5 bg-gray-500/20 border border-gray-500/20 rounded text-blue-300 text-sm">{{ repoUrl }}</code>
+                <p class="text-xs text-gray-500 mt-4">
+                  Click <strong class="text-white">Run Code</strong> above to execute this repository
+                </p>
+                <button
+                  @click="repoUrl = ''"
+                  class="mt-4 text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1 mx-auto">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                  Clear & use code editor
+                </button>
+              </div>
+            </div>
+
+            <!-- Code Editor -->
             <textarea
+              v-else
               v-model="code"
               :class="[
                 'flex-1 w-full p-4 bg-black text-white',
@@ -938,19 +1001,19 @@ const getStatusColor = () => {
           </div>
         </div>
         <!-- Sidebar -->
-        <div class="w-80 border-l border-gray-500/20 flex flex-col overflow-hidden">
+        <div class="w-100 border-l border-gray-500/20 flex flex-col overflow-hidden">
           <!-- Tab Navigation -->
           <div class="p-3 border-b border-gray-500/20 flex-shrink-0">
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-4 gap-2">
               <button
                 @click="activeTab = isMultiFile ? 'files' : 'editor'"
                 :class="[
                   'px-3 py-2 rounded-lg text-xs font-medium transition-all',
                   (activeTab === 'editor' || activeTab === 'files')
                     ? 'bg-gray-500/10 text-white border border-gray-500/10'
-                    : 'text-gray-400 hover:text-white border border-transparent hover:bg-gray-500/10'
+                    : 'text-gray-400 hover:text-white border border-transparent hover:border-gray-500/10 hover:bg-gray-500/10'
                 ]">
-                <span class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1.5 justify-center">
                   <svg v-if="isMultiFile" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                   </svg>
@@ -966,10 +1029,10 @@ const getStatusColor = () => {
                   'px-3 py-2 rounded-lg text-xs font-medium transition-all',
                   activeTab === 'packages'
                     ? 'bg-gray-500/10 text-white border border-gray-500/10'
-                    : 'text-gray-400 hover:text-white border border-transparent hover:bg-gray-500/10'
+                    : 'text-gray-400 hover:text-white border border-transparent hover:border-gray-500/10 hover:bg-gray-500/10'
                 ]">
-                <span class="flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <span class="flex items-center gap-1.5 justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                   </svg>
                   <span>Packages</span>
@@ -981,13 +1044,29 @@ const getStatusColor = () => {
                   'w-full px-3 py-2 rounded-lg text-xs font-medium transition-all',
                   activeTab === 'history'
                     ? 'bg-gray-500/10 text-white border border-gray-500/10'
-                    : 'text-gray-400 hover:text-white border border-transparent hover:bg-gray-500/10'
+                    : 'text-gray-400 hover:text-white border border-transparent hover:border-gray-500/10 hover:bg-gray-500/10'
                 ]">
-                <span class="flex items-center gap-1.5">
+                <span class="flex items-center gap-1.5 justify-center">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   History
+                </span>
+              </button>
+							<button
+                @click="activeTab = 'settings'"
+                :class="[
+                  'px-3 py-2 rounded-lg text-xs font-medium transition-all',
+                  activeTab === 'settings'
+                    ? 'bg-gray-500/10 text-white border border-gray-500/10'
+                    : 'text-gray-400 hover:text-white border border-transparent hover:border-gray-500/10 hover:bg-gray-500/10'
+                ]">
+                <span class="flex items-center gap-1.5 justify-center">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  Settings
                 </span>
               </button>
             </div>
@@ -1184,6 +1263,107 @@ const getStatusColor = () => {
                   </div>
                   <code class="text-xs text-gray-400 line-clamp-2 font-mono">{{ item.code }}</code>
                 </div>
+              </div>
+            </div>
+
+						<!-- Settings Panel -->
+            <div v-else-if="activeTab === 'settings'"
+                 key="settings"
+                 class="flex-1 p-4 overflow-y-auto animate-fade-in">
+              <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Advanced Settings
+              </h3>
+
+              <!-- GitHub Repository -->
+              <div class="mb-6">
+                <label class="text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                  </svg>
+                  GitHub Repository
+                  <span class="inline-flex items-center px-2 py-0.5 text-xs rounded-lg bg-blue-300/10 text-blue-300 border border-blue-300/20">Beta</span>
+                </label>
+                <input
+                  v-model="repoUrl"
+                  type="text"
+                  placeholder="octocat/Hello-World or full URL"
+                  class="w-full px-3 py-2 bg-gray-500/10 text-white border border-gray-500/10 focus:border-gray-500/20 rounded-lg text-sm placeholder-gray-500 transition-all" />
+                <div v-if="repoUrl.trim()" class="mt-2 p-2 bg-blue-300/5 border border-blue-300/20 rounded-lg flex items-start gap-2">
+                  <svg class="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p class="text-xs text-blue-300">
+                    Click <strong>Run Code</strong> to execute this repository
+                  </p>
+                </div>
+                <p v-else class="text-xs text-gray-500 mt-2">
+                  Paste any public GitHub repo. Language & entrypoint auto-detected.
+                </p>
+              </div>
+
+              <!-- Network Access -->
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-sm text-gray-300 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                    </svg>
+                    Network Access
+                    <!-- <span class="inline-flex items-center px-2 py-0.5 text-xs rounded bg-blue-300/10 text-blue-300 border border-blue-300/20"></span> -->
+                  </label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      v-model="allowNetwork"
+                      type="checkbox"
+                      class="sr-only peer">
+                    <div class="w-9 h-5 bg-gray-500/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-300"></div>
+                  </label>
+                </div>
+
+                <div v-if="allowNetwork" class="mt-3 space-y-2 animate-fade-in">
+                  <label class="block text-xs text-gray-400">
+                    Allowed Hosts (one per line, supports wildcards)
+                  </label>
+                  <textarea
+                    v-model="allowedHosts"
+                    rows="4"
+                    placeholder="api.github.com&#10;*.example.com&#10;httpbin.org"
+                    class="w-full px-3 py-2 bg-gray-500/10 text-white border border-gray-500/10 focus:border-gray-500/20 rounded-lg text-sm placeholder-gray-500 font-mono transition-all resize-none"></textarea>
+                  <p class="text-xs text-gray-500">
+                    Leave empty to allow all hosts. Use <code class="text-blue-300">*</code> for wildcards.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Output Size Limit -->
+              <div class="mb-6">
+                <label class="text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  Max Output Size
+                </label>
+                <div class="space-y-2">
+                  <input
+                    v-model.number="maxOutputBytes"
+                    type="range"
+                    min="1024"
+                    max="10485760"
+                    step="1024"
+                    class="w-full h-2 bg-gray-500/20 rounded-lg appearance-none cursor-pointer accent-blue-300">
+                  <div class="flex justify-between text-xs text-gray-400">
+                    <span>1 KB</span>
+                    <span class="text-white font-medium">{{ (maxOutputBytes / 1024 / 1024).toFixed(2) }} MB</span>
+                    <span>10 MB</span>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  Limits combined stdout + stderr output
+                </p>
               </div>
             </div>
           </Transition>
