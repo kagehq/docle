@@ -40,6 +40,9 @@ Executes code in a secure sandbox.
   - `apiKey` (string): Your Docle API key (get one at [app.docle.co](https://app.docle.co/login))
   - `policy?` (object): Execution policy
     - `timeoutMs?` (number): Max execution time in milliseconds (default: 5000)
+    - `allowNetwork?` (boolean): Enable network access (default: false, blocked by default for security)
+    - `allowedHosts?` (string[]): Whitelist of allowed domains when network is enabled. Supports wildcards (e.g., `["api.github.com", "*.stripe.com"]`)
+    - `maxOutputBytes?` (number): Max combined stdout/stderr size in bytes (default: 1MB, max: 10MB)
   - `endpoint?` (string): API endpoint (default: `/api/run`, or `window.DOCLE_ENDPOINT` if set)
   - `userContext?` (object): Optional user context for tracking
     - `id` (string): User identifier
@@ -113,6 +116,57 @@ const result = await runSandbox(
   }
 );
 ```
+
+### Network Access with Allow-Lists
+
+Enable network access to specific domains only:
+
+```typescript
+// Python example: Fetch from GitHub API
+const result = await runSandbox(
+  `
+import urllib.request
+import json
+
+response = urllib.request.urlopen('https://api.github.com/users/octocat')
+data = json.loads(response.read())
+print(f"User: {data['login']}, Repos: {data['public_repos']}")
+  `,
+  {
+    lang: "python",
+    apiKey: process.env.DOCLE_API_KEY,
+    policy: {
+      timeoutMs: 15000,
+      allowNetwork: true,
+      allowedHosts: ["api.github.com"]
+    }
+  }
+);
+
+// Node.js example: Fetch with wildcard subdomain
+const result = await runSandbox(
+  `
+const response = await fetch('https://api.stripe.com/v1/charges');
+console.log('Status:', response.status);
+  `,
+  {
+    lang: "node",
+    apiKey: process.env.DOCLE_API_KEY,
+    policy: {
+      timeoutMs: 15000,
+      allowNetwork: true,
+      allowedHosts: ["*.stripe.com", "api.stripe.com"]
+    }
+  }
+);
+```
+
+**Network Access Patterns:**
+- Exact match: `"api.github.com"` allows only `api.github.com`
+- Wildcard subdomain: `"*.example.com"` allows `api.example.com`, `cdn.example.com`, etc.
+- Multiple hosts: `["api.github.com", "*.googleapis.com", "httpbin.org"]`
+
+**Security Note:** Network access is **disabled by default**. Only enable it with a strict allow-list of trusted domains.
 
 ### Error Handling
 

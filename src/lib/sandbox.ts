@@ -11,6 +11,9 @@ type ExecResult = {
 
 export type SandboxPolicy = {
   timeoutMs: number;
+  allowNetwork?: boolean;        // Enable network access (default: false)
+  allowedHosts?: string[];       // Whitelist of allowed domains (supports wildcards like *.example.com)
+  maxOutputBytes?: number;       // Max combined stdout + stderr size (default: 1MB)
 };
 
 export type SandboxRunOptions = {
@@ -19,6 +22,98 @@ export type SandboxRunOptions = {
   entrypoint?: string;
   packages?: string[];
 };
+
+/**
+ * Generate network access control wrapper for Node.js
+ */
+function generateNodeNetworkWrapper(allowedHosts: string[]): string {
+  return `
+const originalFetch = globalThis.fetch;
+const allowedHosts = ${JSON.stringify(allowedHosts)};
+
+globalThis.fetch = function(url, options) {
+  const urlObj = new URL(url);
+  const hostname = urlObj.hostname;
+  
+  const isAllowed = allowedHosts.some(pattern => {
+    if (pattern.startsWith('*.')) {
+      // Wildcard subdomain: *.example.com matches api.example.com, sub.example.com
+      const domain = pattern.slice(2);
+      return hostname === domain || hostname.endsWith('.' + domain);
+    } else if (pattern.startsWith('*')) {
+      // Wildcard prefix: *example.com matches example.com, apiexample.com
+      return hostname.endsWith(pattern.slice(1));
+    } else {
+      // Exact match
+      return hostname === pattern;
+    }
+  });
+  
+  if (!isAllowed) {
+    throw new Error(\`Network access denied: \${hostname} is not in allowed hosts list\`);
+  }
+  
+  return originalFetch(url, options);
+};
+`;
+}
+
+/**
+ * Generate network access control wrapper for Python
+ */
+function generatePythonNetworkWrapper(allowedHosts: string[]): string {
+  return `
+import urllib.request
+import urllib.error
+from urllib.parse import urlparse
+
+_original_urlopen = urllib.request.urlopen
+_allowed_hosts = ${JSON.stringify(allowedHosts)}
+
+def _is_host_allowed(hostname):
+    for pattern in _allowed_hosts:
+        if pattern.startswith('*.'):
+            domain = pattern[2:]
+            if hostname == domain or hostname.endswith('.' + domain):
+                return True
+        elif pattern.startswith('*'):
+            if hostname.endswith(pattern[1:]):
+                return True
+        else:
+            if hostname == pattern:
+                return True
+    return False
+
+def _checked_urlopen(url, *args, **kwargs):
+    parsed = urlparse(url) if isinstance(url, str) else urlparse(url.full_url)
+    hostname = parsed.netloc.split(':')[0]  # Remove port if present
+    
+    if not _is_host_allowed(hostname):
+        raise urllib.error.URLError(f"Network access denied: {hostname} is not in allowed hosts list")
+    
+    return _original_urlopen(url, *args, **kwargs)
+
+urllib.request.urlopen = _checked_urlopen
+
+# Also patch requests library if available
+try:
+    import requests
+    _original_request = requests.request
+    
+    def _checked_request(method, url, *args, **kwargs):
+        parsed = urlparse(url)
+        hostname = parsed.netloc.split(':')[0]
+        
+        if not _is_host_allowed(hostname):
+            raise requests.exceptions.ConnectionError(f"Network access denied: {hostname} is not in allowed hosts list")
+        
+        return _original_request(method, url, *args, **kwargs)
+    
+    requests.request = _checked_request
+except ImportError:
+    pass
+`;
+}
 
 /**
  * Execute code in a secure Cloudflare Sandbox with multi-file and package support.
@@ -79,11 +174,39 @@ export async function runInSandbox(
       }
     }
 
+    // Setup network access controls if enabled
+    if (policy.allowNetwork && policy.allowedHosts && policy.allowedHosts.length > 0) {
+      if (lang === "python") {
+        const wrapperCode = generatePythonNetworkWrapper(policy.allowedHosts);
+        await sandbox.writeFile('/workspace/__network_guard__.py', wrapperCode);
+      } else {
+        const wrapperCode = generateNodeNetworkWrapper(policy.allowedHosts);
+        await sandbox.writeFile('/workspace/__network_guard__.js', wrapperCode);
+      }
+    }
+
     // Determine command based on language
     const filepath = `/workspace/${entrypoint}`;
-    const command = lang === "python"
-      ? `python3 ${filepath}`
-      : `node ${filepath}`;
+    let command: string;
+    
+    if (lang === "python") {
+      // For Python: import network guard before running main file
+      if (policy.allowNetwork && policy.allowedHosts && policy.allowedHosts.length > 0) {
+        // Create a wrapper that imports network guard then runs the main file
+        const wrapperScript = `import __network_guard__\nexec(open('${filepath}').read())`;
+        await sandbox.writeFile('/workspace/__main_wrapper__.py', wrapperScript);
+        command = `python3 /workspace/__main_wrapper__.py`;
+      } else {
+        command = `python3 ${filepath}`;
+      }
+    } else {
+      // For Node: require network guard before running main file
+      if (policy.allowNetwork && policy.allowedHosts && policy.allowedHosts.length > 0) {
+        command = `node -r /workspace/__network_guard__.js ${filepath}`;
+      } else {
+        command = `node ${filepath}`;
+      }
+    }
 
     // Execute with timeout
     const result = await sandbox.exec(command, {
@@ -92,9 +215,33 @@ export async function runInSandbox(
 
     const durationMs = Date.now() - start;
 
+    // Apply output size limits if specified
+    let stdout = result.stdout || "";
+    let stderr = result.stderr || "";
+    const maxBytes = policy.maxOutputBytes || 1024 * 1024; // Default 1MB
+    
+    const totalOutputSize = new TextEncoder().encode(stdout + stderr).length;
+    
+    if (totalOutputSize > maxBytes) {
+      // Truncate output to stay within limit
+      const truncateMessage = `\n\n... (output truncated: ${totalOutputSize} bytes exceeds limit of ${maxBytes} bytes)`;
+      const availableBytes = maxBytes - new TextEncoder().encode(truncateMessage).length;
+      
+      const combined = stdout + stderr;
+      const decoder = new TextDecoder();
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(combined);
+      
+      if (encoded.length > availableBytes) {
+        const truncated = decoder.decode(encoded.slice(0, availableBytes));
+        stdout = truncated + truncateMessage;
+        stderr = "";
+      }
+    }
+
     return {
-      stdout: result.stdout || "",
-      stderr: result.stderr || "",
+      stdout,
+      stderr,
       exitCode: result.exitCode,
       usage: {
         durationMs,

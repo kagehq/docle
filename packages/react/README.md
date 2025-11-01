@@ -179,6 +179,9 @@ interface DocleRunOptions {
   lang: 'python' | 'node';
   policy?: {
     timeoutMs?: number;
+    allowNetwork?: boolean;       // Enable network access (default: false)
+    allowedHosts?: string[];      // Whitelist of allowed domains (supports wildcards like *.example.com)
+    maxOutputBytes?: number;      // Max output size in bytes (default: 1MB)
   };
   endpoint?: string;             // API endpoint (defaults to https://api.docle.co)
   apiKey?: string;               // API key for authentication

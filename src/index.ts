@@ -659,9 +659,12 @@ app.post("/api/run", async (c) => {
       return c.json({ error: "Invalid payload", issues: parsed.error.flatten() }, 400);
     }
 
-    const { code, files, entrypoint, packages, lang, policy: raw, userContext } = parsed.data;
+    const { code, files, repo, entrypoint, packages, lang, policy: raw, userContext } = parsed.data;
     const policy = {
       timeoutMs: raw?.timeoutMs ?? 3000,
+      allowNetwork: raw?.allowNetwork,
+      allowedHosts: raw?.allowedHosts,
+      maxOutputBytes: raw?.maxOutputBytes,
     };
 
     // API key is required for all requests
@@ -713,18 +716,59 @@ app.post("/api/run", async (c) => {
 
     const id = crypto.randomUUID();
 
+    // Handle GitHub repository if provided
+    let actualFiles = files;
+    let actualLang = lang;
+    let actualEntrypoint = entrypoint;
+    let actualPackages = packages?.packages;
+
+    if (repo) {
+      try {
+        // Import GitHub utilities
+        const { fetchGitHubRepo, detectLanguage, detectEntrypoint, extractPackages } = 
+          await import('./lib/github');
+        
+        // Fetch repository files
+        actualFiles = await fetchGitHubRepo(repo, {
+          maxFiles: 100,
+          maxFileSize: 1024 * 1024 // 1MB per file
+        });
+        
+        // Auto-detect language if not provided
+        if (!actualLang) {
+          actualLang = detectLanguage(actualFiles);
+        }
+        
+        // Auto-detect entrypoint if not provided
+        if (!actualEntrypoint) {
+          actualEntrypoint = detectEntrypoint(actualFiles, actualLang);
+        }
+        
+        // Extract packages if not provided
+        if (!actualPackages || actualPackages.length === 0) {
+          actualPackages = extractPackages(actualFiles, actualLang);
+        }
+      } catch (error: any) {
+        return c.json({
+          error: "Failed to load GitHub repository",
+          message: error.message,
+          repo
+        }, 400);
+      }
+    }
+
     // Prepare sandbox options
     const sandboxOptions = {
       code,
-      files,
-      entrypoint,
-      packages: packages?.packages,
+      files: actualFiles,
+      entrypoint: actualEntrypoint,
+      packages: actualPackages,
     };
 
     // Use real Sandbox if available (production), otherwise simulate (local dev)
     const exec = c.env.SANDBOX
-      ? await runInSandbox(c.env, sandboxOptions, lang, policy, id)
-      : await simulateExec(sandboxOptions, lang, policy);
+      ? await runInSandbox(c.env, sandboxOptions, actualLang!, policy, id)
+      : await simulateExec(sandboxOptions, actualLang!, policy);
 
     const result: RunResult = {
       id,
@@ -747,7 +791,7 @@ app.post("/api/run", async (c) => {
     const userId = userContext?.id || null;
     const userEmail = userContext?.email || null;
 
-    await trackUsage(c.env, project.id, userId, lang, code, status, exec.exitCode, executionTimeMs, userEmail);
+    await trackUsage(c.env, project.id, userId, actualLang!, code || `[repo:${repo}]`, status, exec.exitCode, executionTimeMs, userEmail);
 
     return c.json(result);
   } catch (e: any) {

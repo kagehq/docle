@@ -1,4 +1,9 @@
-export type Policy = { timeoutMs?: number };
+export type Policy = {
+  timeoutMs?: number;
+  allowNetwork?: boolean;
+  allowedHosts?: string[];
+  maxOutputBytes?: number;
+};
 
 export type UserContext = {
   id: string;
@@ -9,7 +14,9 @@ export type UserContext = {
 };
 
 export type RunOptions = {
-  lang: "python" | "node";
+  lang?: "python" | "node"; // Optional when repo is provided (auto-detect)
+  repo?: string; // GitHub repository URL (e.g., "owner/repo" or full URL)
+  entrypoint?: string; // Optional entrypoint (auto-detect if not provided)
   policy?: Policy;
   endpoint?: string;
   apiKey?: string; // Optional API key for authenticated access
@@ -36,10 +43,14 @@ export async function runSandbox(code: string, opts: RunOptions): Promise<RunRes
   }
 
   const body: Record<string, unknown> = {
-    code,
-    lang: opts.lang,
     policy: opts.policy ?? {}
   };
+  
+  // Add code or repo
+  if (code) body.code = code;
+  if (opts.repo) body.repo = opts.repo;
+  if (opts.lang) body.lang = opts.lang;
+  if (opts.entrypoint) body.entrypoint = opts.entrypoint;
   if (opts.userContext) body.userContext = opts.userContext;
 
   const res = await fetch(endpoint, {

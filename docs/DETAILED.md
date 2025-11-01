@@ -18,15 +18,16 @@
 11. [Security & Sandboxing](#security--sandboxing)
 12. [Multi-File Projects](#multi-file-projects)
 13. [Package Installation](#package-installation)
-14. [Collaborative Editing](#collaborative-editing)
-15. [Execution Policies](#execution-policies)
-16. [Storage & History](#storage--history)
-17. [Dashboard UI](#dashboard-ui)
-18. [Architecture](#architecture)
-19. [Use Cases](#use-cases)
-20. [Deployment Guide](#deployment-guide)
-21. [Performance & Limits](#performance--limits)
-22. [Troubleshooting](#troubleshooting)
+14. [GitHub Repository Loading](#github-repository-loading)
+15. [Collaborative Editing](#collaborative-editing)
+16. [Execution Policies](#execution-policies)
+17. [Storage & History](#storage--history)
+18. [Dashboard UI](#dashboard-ui)
+19. [Architecture](#architecture)
+20. [Use Cases](#use-cases)
+21. [Deployment Guide](#deployment-guide)
+22. [Performance & Limits](#performance--limits)
+23. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -56,6 +57,7 @@ Docle solves the hard problem of running untrusted code safely. Whether you're b
 
 - ✅ Single-file code execution
 - ✅ Multi-file project execution
+- ✅ GitHub repository loading (paste URL → execute)
 - ✅ Third-party package installation (pip/npm)
 - ✅ Custom entrypoint selection
 - ✅ Configurable timeout policies
@@ -1466,7 +1468,10 @@ Fine-grained control over execution environment.
 
 ```typescript
 {
-  timeoutMs: number;    // 100 - 300,000 (5 minutes)
+  timeoutMs?: number;          // 100 - 300,000 (5 minutes)
+  allowNetwork?: boolean;      // Enable network access (default: false)
+  allowedHosts?: string[];     // Whitelist of allowed domains (supports wildcards)
+  maxOutputBytes?: number;     // Max stdout + stderr size (default: 1MB, max: 10MB)
 }
 ```
 
@@ -1489,31 +1494,146 @@ Controls maximum execution time.
 }
 ```
 
+### Network Access (allowNetwork, allowedHosts)
+
+Control network access with domain-based allow-lists.
+
+**Default:** Network access is **blocked** for security
+
+**Enable with allow-list:**
+
+```javascript
+{
+  "policy": {
+    "timeoutMs": 15000,
+    "allowNetwork": true,
+    "allowedHosts": ["api.github.com", "*.stripe.com", "httpbin.org"]
+  }
+}
+```
+
+**Pattern Matching:**
+- `"api.github.com"` - Exact match only
+- `"*.github.com"` - All subdomains (api.github.com, gist.github.com, etc.)
+- `"*github.com"` - Suffix match (api.github.com, github.com, apigithub.com)
+
+**Example - Python:**
+
+```bash
+curl -X POST https://api.docle.co/api/run \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "import urllib.request; response = urllib.request.urlopen(\"https://api.github.com/users/octocat\"); print(response.read())",
+    "lang": "python",
+    "policy": {
+      "timeoutMs": 15000,
+      "allowNetwork": true,
+      "allowedHosts": ["api.github.com"]
+    }
+  }'
+```
+
+**Example - Node.js:**
+
+```bash
+curl -X POST https://api.docle.co/api/run \
+  -H "Authorization: Bearer sk_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "const res = await fetch(\"https://api.github.com/users/octocat\"); const data = await res.json(); console.log(data.login);",
+    "lang": "node",
+    "policy": {
+      "timeoutMs": 15000,
+      "allowNetwork": true,
+      "allowedHosts": ["api.github.com"]
+    }
+  }'
+```
+
+**Security Notes:**
+- Network is **disabled by default** - must explicitly enable
+- Use specific domain matches when possible
+- Use wildcards only for domains you trust
+- Set appropriate timeouts for network calls (15-30 seconds)
+
+See [examples/network-access.md](examples/network-access.md) for more examples.
+
+### Output Size Limit (maxOutputBytes)
+
+Limit the combined size of stdout and stderr.
+
+- **Default:** 1,048,576 bytes (1MB)
+- **Minimum:** 1,024 bytes (1KB)
+- **Maximum:** 10,485,760 bytes (10MB)
+
+**Example:**
+
+```javascript
+{
+  "policy": {
+    "maxOutputBytes": 10240  // Limit to 10KB
+  }
+}
+```
+
+When the limit is exceeded, output is truncated with a message indicating the original size.
+
 ### Recommended Policies by Use Case
 
 **Quick Scripts (default):**
 ```javascript
-{ timeoutMs: 3000 }
+{ 
+  timeoutMs: 3000 
+}
 ```
 
 **Data Processing:**
 ```javascript
-{ timeoutMs: 30000 }
+{ 
+  timeoutMs: 30000 
+}
 ```
 
-**API Calls:**
+**API Calls (with network access):**
 ```javascript
-{ timeoutMs: 15000 }
+{ 
+  timeoutMs: 15000,
+  allowNetwork: true,
+  allowedHosts: ["api.github.com", "*.googleapis.com"]
+}
+```
+
+**Webhook Testing:**
+```javascript
+{ 
+  timeoutMs: 20000,
+  allowNetwork: true,
+  allowedHosts: ["webhook.site", "*.stripe.com", "api.github.com"]
+}
 ```
 
 **Heavy Computation:**
 ```javascript
-{ timeoutMs: 60000 }
+{ 
+  timeoutMs: 60000 
+}
 ```
 
 **Educational/Untrusted Code:**
 ```javascript
-{ timeoutMs: 5000 }
+{ 
+  timeoutMs: 5000,
+  maxOutputBytes: 51200  // 50KB limit
+}
+```
+
+**Large Output Processing:**
+```javascript
+{
+  timeoutMs: 30000,
+  maxOutputBytes: 10485760  // 10MB (maximum)
+}
 ```
 
 ---
@@ -2484,6 +2604,143 @@ Install third-party packages before execution.
 - axios (HTTP client)
 - moment (date/time)
 - cheerio (HTML parsing)
+
+---
+
+## GitHub Repository Loading
+
+Run code directly from GitHub repositories without cloning or downloading. Perfect for demos, documentation, and trying out example projects.
+
+### Overview
+
+Paste a GitHub URL and Docle automatically:
+- Fetches repository files
+- Detects the language (Python or Node.js)
+- Finds the entrypoint (main.py, index.js, etc.)
+- Installs packages (requirements.txt, package.json)
+- Executes the code
+
+### Supported URL Formats
+
+```typescript
+// Short format
+"owner/repo"
+
+// Full URL
+"https://github.com/owner/repo"
+
+// Specific branch
+"https://github.com/owner/repo/tree/develop"
+
+// Specific folder
+"https://github.com/owner/repo/tree/main/examples/demo"
+```
+
+### Quick Example
+
+**TypeScript SDK:**
+```typescript
+import { runSandbox } from '@doclehq/sdk';
+
+const result = await runSandbox(null, {
+  repo: 'octocat/Hello-World',
+  apiKey: process.env.DOCLE_API_KEY
+});
+
+console.log(result.stdout);
+```
+
+**REST API:**
+```bash
+curl -X POST https://api.docle.co/api/run \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"repo": "octocat/Hello-World"}'
+```
+
+**React:**
+```tsx
+<DoclePlayground
+  repo="your-org/example-project"
+  apiKey={process.env.REACT_APP_DOCLE_API_KEY}
+  autorun={true}
+/>
+```
+
+### How It Works
+
+1. **Parse URL:** Extracts owner, repo, branch, and path
+2. **Fetch Files:** Downloads files via GitHub API (public repos only)
+3. **Detect Language:** Analyzes file extensions and manifest files
+4. **Find Entrypoint:** Looks for main.py, index.js, or checks package.json
+5. **Extract Packages:** Reads requirements.txt or package.json dependencies
+6. **Execute:** Runs code using existing multi-file infrastructure
+
+### Features
+
+- ✅ **Automatic language detection** - Python or Node.js
+- ✅ **Automatic entrypoint detection** - No configuration needed
+- ✅ **Automatic package installation** - requirements.txt, package.json
+- ✅ **Multiple URL formats** - Short names or full URLs
+- ✅ **Branch support** - Test specific branches
+- ✅ **Folder support** - Run subdirectories
+- ✅ **Public repositories** - Any public GitHub repo
+
+### Limits
+
+- **Max files:** 100 files per repository
+- **Max file size:** 1MB per file
+- **Max packages:** 20 packages
+- **Repository visibility:** Public repositories only
+- **Supported extensions:** .py, .js, .ts, .json, .txt, .md, .jsx, .tsx, .mjs, .cjs, .yml, .yaml, .toml, .ini, .cfg, .conf
+
+### Override Defaults
+
+You can override auto-detection:
+
+```typescript
+{
+  repo: "owner/repo",
+  lang: "python",              // Force language
+  entrypoint: "src/main.py",   // Custom entrypoint
+  policy: {
+    timeoutMs: 30000,          // More time for large repos
+    allowNetwork: true,
+    allowedHosts: ["api.github.com"]
+  }
+}
+```
+
+### Error Handling
+
+**Repository not found:**
+```json
+{
+  "error": "Failed to load GitHub repository",
+  "message": "Repository not found: owner/repo. Make sure it's public."
+}
+```
+
+**Too many files:**
+```json
+{
+  "error": "Failed to load GitHub repository",
+  "message": "Too many files in repository (150). Maximum allowed: 100"
+}
+```
+
+### Use Cases
+
+1. **Live Documentation** - Embed runnable examples
+2. **Tutorial Series** - Students run examples without setup
+3. **Code Review** - Test PRs before merging
+4. **Demo Gallery** - Showcase example projects
+5. **"Try Before Clone"** - Let users test your OSS project
+
+### Complete Guide
+
+For detailed documentation, examples, and best practices, see:
+**[GitHub Repository Loading Guide](github-repos.md)**
 
 ---
 

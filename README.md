@@ -15,8 +15,10 @@ But running untrusted code is scary. Docle makes it safe and simple.
 ## What you get
 
 - **Fast** - Runs on Cloudflare's edge network (<50ms latency)
-- **Secure** - Isolated sandboxes, can't touch your infrastructure  
+- **Secure** - Isolated sandboxes with network access controls
 - **Full-featured** - npm/pip packages, multi-file projects, real-time collaboration
+- **GitHub integration** - Run code directly from repositories (paste URL → execute)
+- **Network controls** - Optional allow-lists for safe external API access
 - **Instant APIs** - Deploy code as API endpoints in seconds (no repos, no builds)
 - **Works everywhere** - React, Vue, vanilla JS, or REST API
 
@@ -49,6 +51,30 @@ npm install && cd playground && npm install && cd ..
 ---
 
 ## Quick Example
+
+### Run from GitHub (NEW!)
+
+```typescript
+import { runSandbox } from '@doclehq/sdk';
+
+// Paste a GitHub URL → instant execution
+const result = await runSandbox(null, {
+  repo: 'octocat/Hello-World',
+  apiKey: process.env.DOCLE_API_KEY
+});
+
+console.log(result.stdout); // Output from the repo
+```
+
+Or with React:
+```tsx
+<DoclePlayground 
+  repo="your-org/example-project"
+  apiKey={process.env.REACT_APP_DOCLE_API_KEY}
+/>
+```
+
+[→ Full GitHub integration guide](docs/github-repos.md)
 
 ### Server-side (Recommended)
 
@@ -134,8 +160,9 @@ npm install @doclehq/rate-limit # Per-user rate limiting helper
 
 | Guide | Description |
 |-------|-------------|
-| **[DETAILED.md](DETAILED.md)** | Complete API reference, authentication, rate limiting, analytics |
-| **[INSTANT_API.md](INSTANT_API.md)** | Deploy code as API endpoints - full guide |
+| **[DETAILED.md](docs/DETAILED.md)** | Complete API reference, authentication, rate limiting, analytics |
+| **[GitHub Repos](docs/github-repos.md)** | Run code directly from GitHub repositories |
+| **[INSTANT_API.md](docs/INSTANT_API.md)** | Deploy code as API endpoints - full guide |
 | **[React](packages/react/README.md)** | React hooks and components |
 | **[Vue](packages/vue/README.md)** | Vue composables and components |
 | **[SDK](sdk/README.md)** | TypeScript SDK for direct API integration |

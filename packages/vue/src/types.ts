@@ -1,13 +1,14 @@
 export interface DoclePlaygroundProps {
-  lang?: 'python' | 'node';
-  code?: string;
+  lang?: 'python' | 'node'; // Optional when repo is provided (auto-detect)
+  repo?: string; // GitHub repository URL (e.g., "owner/repo" or full URL)
+  code?: string; // Not used when repo is provided
   theme?: 'dark' | 'light';
   readonly?: boolean;
   showOutput?: boolean;
   autorun?: boolean;
   height?: string;
   endpoint?: string;
-  apiKey?: string; // NEW: Optional API key for authenticated access
+  apiKey?: string; // Optional API key for authenticated access
 }
 
 export interface DocleRunResult {

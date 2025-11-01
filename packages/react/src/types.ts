@@ -3,6 +3,9 @@ export type Theme = 'dark' | 'light';
 
 export interface DoclePolicy {
   timeoutMs?: number;
+  allowNetwork?: boolean;
+  allowedHosts?: string[];
+  maxOutputBytes?: number;
 }
 
 export interface UserContext {
@@ -14,7 +17,9 @@ export interface UserContext {
 }
 
 export interface DocleRunOptions {
-  lang: Lang;
+  lang?: Lang; // Optional when repo is provided (auto-detect)
+  repo?: string; // GitHub repository URL
+  entrypoint?: string; // Optional entrypoint (auto-detect if not provided)
   policy?: DoclePolicy;
   endpoint?: string;
   apiKey?: string; // Optional API key for authenticated access
@@ -38,11 +43,13 @@ export interface DocleResult {
 }
 
 export interface DoclePlaygroundProps {
-  /** Programming language */
+  /** Programming language (optional when repo is provided) */
   lang?: Lang;
+  /** GitHub repository URL (e.g., "owner/repo" or full URL) */
+  repo?: string;
   /** UI theme */
   theme?: 'dark' | 'light';
-  /** Initial code */
+  /** Initial code (not used when repo is provided) */
   code?: string;
   /** Make editor read-only */
   readonly?: boolean;
@@ -56,7 +63,7 @@ export interface DoclePlaygroundProps {
   width?: string | number;
   /** API endpoint override */
   endpoint?: string;
-  /** API key for authenticated access (NEW) */
+  /** API key for authenticated access */
   apiKey?: string;
   /** Callback when embed is ready */
   onReady?: (data: { lang: Lang }) => void;

@@ -4,7 +4,10 @@ export const Lang = z.enum(["python", "node"]);
 export type Lang = z.infer<typeof Lang>;
 
 export const Policy = z.object({
-  timeoutMs: z.number().int().min(100).max(300000).default(3000)
+  timeoutMs: z.number().int().min(100).max(300000).default(3000),
+  allowNetwork: z.boolean().optional(),
+  allowedHosts: z.array(z.string()).optional(),
+  maxOutputBytes: z.number().int().min(1024).max(10 * 1024 * 1024).optional() // 1KB to 10MB
 }).partial().default({});
 
 // User context for per-user tracking and rate limiting
@@ -35,17 +38,19 @@ export const RunRequest = z.object({
   code: z.string().optional(),
   // Multi-file mode
   files: z.array(FileEntry).optional(),
+  // GitHub repository mode (NEW)
+  repo: z.string().optional(),
   // Entry point for multi-file (e.g., "main.py")
   entrypoint: z.string().optional(),
   // Package installation
   packages: PackageSpec.optional(),
-  lang: Lang,
+  lang: Lang.optional(), // Make optional when repo is provided (auto-detect)
   policy: Policy,
   // Optional user context for per-user tracking
   userContext: UserContext
 }).refine(
-  (data) => data.code || (data.files && data.files.length > 0),
-  { message: "Either 'code' or 'files' must be provided" }
+  (data) => data.code || (data.files && data.files.length > 0) || data.repo,
+  { message: "Either 'code', 'files', or 'repo' must be provided" }
 );
 export type RunRequest = z.infer<typeof RunRequest>;
 
