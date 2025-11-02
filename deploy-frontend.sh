@@ -6,7 +6,7 @@
 echo "🎨 Building and Deploying Frontend to Production..."
 echo ""
 
-cd playground
+cd web
 
 echo "📦 Building (this may take a minute)..."
 npm run build

@@ -11,8 +11,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local --persist-to .wrangler/state",
-    "dev:playground": "cd playground && npm run dev",
-    "start": "npm run dev & npm run dev:playground",
+    "dev:web": "cd web && npm run dev",
+    "start": "npm run dev & npm run dev:web",
     "deploy": "wrangler deploy",
     "deploy:prod": "./deploy.sh",
     "deploy:backend": "./deploy-backend.sh",

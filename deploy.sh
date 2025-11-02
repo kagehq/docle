@@ -42,7 +42,7 @@ echo ""
 echo "${BLUE}🎨 Building Frontend...${NC}"
 echo ""
 
-cd playground
+cd web
 npm run build
 
 if [ $? -eq 0 ]; then

@@ -302,7 +302,7 @@ When creating an API key, specify `rateLimitPerMinute`:
 
 | Limit | Use Case |
 |-------|----------|
-| **10/min** | Public demos, free tier, embedded playgrounds |
+| **10/min** | Public demos, free tier, embedded editors |
 | **60/min** | Development, testing, light production usage |
 | **300/min** | Standard production apps, typical SaaS usage |
 | **1000/min** | High-volume apps, batch processing, enterprise |
@@ -1329,7 +1329,7 @@ curl -X POST https://api.docle.co/api/run \
 
 ## Embeddable Components
 
-Add interactive code playgrounds to any website with zero configuration.
+Add interactive code editors to any website with zero configuration.
 
 ### CDN Embed (Recommended)
 
@@ -1672,7 +1672,7 @@ const historicalResult = await fetch(`https://api.docle.co/api/run/${result.id}`
 
 ### Local Storage (Playground)
 
-The playground UI also stores executions locally:
+The web UI also stores executions locally:
 - **Storage:** Browser localStorage
 - **Limit:** Last 50 executions
 - **Persistence:** Until cleared by user
@@ -1699,7 +1699,7 @@ Docle provides a modern, production-ready dashboard built with **Nuxt.js** and *
 - **Empty state** - Helpful quick start guide
 - **Modern dark theme** - Consistent brand identity
 
-#### Playground (`/playground`)
+#### Code Editor (`/playground`)
 - **Live code editor** with syntax highlighting (Monaco)
 - **Language selector** - Python & Node.js
 - **Multi-file mode** - File tree navigation
@@ -1756,7 +1756,7 @@ Docle provides a modern, production-ready dashboard built with **Nuxt.js** and *
 - **Auth required** - Sign in to view
 
 #### Embed Page (`/embed`)
-- **Minimal playground** for iframe embedding
+- **Minimal editor** for iframe embedding
 - **URL parameters** - lang, code, theme, readonly, autorun
 - **postMessage API** - Parent-child communication
 - **Secure API key** - Passed from parent via postMessage
@@ -1795,7 +1795,7 @@ Docle provides a modern, production-ready dashboard built with **Nuxt.js** and *
 ```
 /                 → Dashboard (home)
 /login            → Magic link auth
-/playground       → Code playground (auth required)
+/playground       → Code editor (auth required)
 /snippets         → Integration examples (auth required)
 /projects/[id]    → Project details (auth required)
 /embed            → Minimal embed page (public)
@@ -2018,8 +2018,8 @@ cd docle
 # Install dependencies
 npm install
 
-# Install playground dependencies
-cd playground && npm install && cd ..
+# Install web dependencies
+cd web && npm install && cd ..
 
 # Start both backend and frontend
 ./start.sh
@@ -2035,7 +2035,7 @@ cd playground && npm install && cd ..
 - ✅ Full API with authentication
 - ✅ Dashboard UI for testing
 - ✅ Project & API key management
-- ✅ Code playground
+- ✅ Code editor
 - ✅ Local D1 database (persisted)
 - ⚠️ Sandbox runs in **simulation mode** (real sandbox requires production deployment)
 
@@ -2043,7 +2043,7 @@ cd playground && npm install && cd ..
 
 **Environment:**
 - Backend: `wrangler.toml` (already configured for local dev)
-- Frontend: `playground/nuxt.config.ts` (proxies to backend)
+- Frontend: `web/nuxt.config.ts` (proxies to backend)
 
 **Database Setup:**
 
@@ -2205,7 +2205,7 @@ If you want the dashboard UI:
 
 **Update configuration:**
 
-Edit `playground/nuxt.config.ts`:
+Edit `web/nuxt.config.ts`:
 ```typescript
 runtimeConfig: {
   public: {
@@ -2216,7 +2216,7 @@ runtimeConfig: {
 
 **Build:**
 ```bash
-cd playground
+cd web
 npm run build
 ```
 
@@ -2751,7 +2751,7 @@ Real-time multi-user code editing powered by Durable Objects and WebSockets.
 ### Creating a Session
 
 ```bash
-# Visit the collab playground
+# Visit the collab editor
 https://api.docle.co/collab
 
 # You'll be redirected to a unique session URL
@@ -3000,7 +3000,7 @@ const { functionName } = require('./utils/helper');
 
 ## Advanced Editor Features
 
-The playground includes a professional code editor powered by CodeMirror 6.
+The web app includes a professional code editor powered by CodeMirror 6.
 
 ### Features
 
@@ -3013,20 +3013,20 @@ The playground includes a professional code editor powered by CodeMirror 6.
 
 ### Available Playgrounds
 
-**Simple Playground (`/playground`):**
+**Simple Editor (`/playground`):**
 - Single-file editor
 - Syntax highlighting
 - Execution history
 - Quick prototyping
 
-**Advanced Playground (`/playground/advanced`):**
+**Advanced Editor (`/playground/advanced`):**
 - Multi-file editor
 - File tree sidebar
 - Package installation UI
 - Tab-based file switching
 - Session save/load
 
-**Collaborative Playground (`/playground/collab`):**
+**Collaborative Editor (`/playground/collab`):**
 - Real-time multi-user editing
 - User presence indicators
 - Shared execution

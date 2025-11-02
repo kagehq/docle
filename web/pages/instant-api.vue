@@ -228,6 +228,10 @@ const deployedEndpoint = ref(null);
 const endpoints = ref([]);
 const loadingEndpoints = ref(true);
 
+useHead({
+  title: 'Instant API - Docle'
+})
+
 // Templates
 const templates = computed(() => {
   if (selectedLang.value === 'node') {

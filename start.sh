@@ -62,16 +62,16 @@ for i in {1..30}; do
   sleep 1
 done
 
-# Start Nuxt Playground in background
-echo "🎨 Starting Playground (Nuxt) on port 3001..."
-cd playground && npm run dev > /tmp/docle-playground.log 2>&1 &
-PLAYGROUND_PID=$!
+# Start Nuxt Web in background
+echo "🎨 Starting Web (Nuxt) on port 3001..."
+cd web && npm run dev > /tmp/docle-web.log 2>&1 &
+WEB_PID=$!
 
 # Wait for Nuxt to be ready
 echo "  ⏳ Waiting for Nuxt to start..."
 for i in {1..30}; do
   if curl -s http://localhost:3001/ > /dev/null 2>&1; then
-    echo "  ✓ Playground is ready!"
+    echo "  ✓ Web is ready!"
     break
   fi
   sleep 1
@@ -80,13 +80,13 @@ done
 echo ""
 echo "✅ Docle is running!"
 echo ""
-echo "  📡 API:        http://localhost:8787"
-echo "  🎨 Playground: http://localhost:3001"
-echo "  🔑 Login:      http://localhost:3001/login"
+echo "  📡 API: http://localhost:8787"
+echo "  🎨 Web: http://localhost:3001"
+echo "  🔑 Login: http://localhost:3001/login"
 echo ""
 echo "📋 Logs:"
-echo "  API:        tail -f /tmp/docle-api.log"
-echo "  Playground: tail -f /tmp/docle-playground.log"
+echo "  API: tail -f /tmp/docle-api.log"
+echo "  Web: tail -f /tmp/docle-web.log"
 echo ""
 echo "⏹️  To stop: ./stop.sh"
 echo ""
@@ -95,5 +95,5 @@ echo ""
 trap "pkill -P $$; exit" SIGINT SIGTERM
 
 # Follow both logs
-tail -f /tmp/docle-api.log /tmp/docle-playground.log
+tail -f /tmp/docle-api.log /tmp/docle-web.log
 

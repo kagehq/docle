@@ -42,7 +42,7 @@ Deploy your own instance on Cloudflare Workers. [**→ Guide**](DETAILED.md#depl
 
 ```bash
 git clone https://github.com/kagehq/docle.git && cd docle
-npm install && cd playground && npm install && cd ..
+npm install && cd web && npm install && cd ..
 ./start.sh  # API: localhost:8787, Dashboard: localhost:3001
 ```
 
